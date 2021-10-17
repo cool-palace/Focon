@@ -27,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     angle = new QDoubleSpinBox(this);
     angle->setSingleStep(0.5);
 
+
+
     calc = new QPushButton("Рассчитать", this);
 
     vbox->setSpacing(3);
@@ -39,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     vbox->addWidget(length);
     vbox->addWidget(label_angle);
     vbox->addWidget(angle);
+
     vbox->addWidget(calc);
     vbox->addStretch(1);
 

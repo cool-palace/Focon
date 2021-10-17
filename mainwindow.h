@@ -11,6 +11,7 @@
 #include <QGraphicsView>
 #include <QGraphicsLineItem>
 
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -23,6 +24,7 @@ public:
     QDoubleSpinBox * d_out;
     QDoubleSpinBox * length;
     QDoubleSpinBox * angle;
+
     QPushButton *calc;
 
     QGraphicsScene* scene;

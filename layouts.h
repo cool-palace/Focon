@@ -11,6 +11,7 @@
 #include <QGraphicsLineItem>
 #include <QObject>
 #include <QVector>
+#include <QDial>
 #include "geometry.h"
 
 class Layouts : public QWidget
@@ -24,9 +25,12 @@ public:
     QDoubleSpinBox * length;
     QDoubleSpinBox * angle;
     QDoubleSpinBox * height;
+    QDoubleSpinBox * offset;
+    QDial * rotation;
     QPushButton *calc;
 
     qreal scale;
+    qreal scale_xoy;
 
     QGraphicsScene* scene;
     QGraphicsView* view;
@@ -34,15 +38,22 @@ public:
     QGraphicsLineItem * z_axis;
     QGraphicsLineItem * focon_up;
     QGraphicsLineItem * focon_down;
+    QGraphicsEllipseItem * circle;
+    QGraphicsEllipseItem * circle_out;
 
     Point start;
-    Cone * cone;
-    Beam * beam;
+    Cone cone;
+    Beam beam;
     QVector<QGraphicsLineItem *> beams;
+    QVector<QGraphicsLineItem *> beams_xoy;
+    QVector<Point> points;
     QGraphicsTextItem * result;
 
 public slots:
-    void draw();
+    void clear();
+    void draw(int rotation_angle);
+    void rotate(int rotation_angle);
+    void build();
 
 signals:
 

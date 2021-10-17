@@ -11,9 +11,9 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     Layouts window;
-    window.setFixedSize(1000,600);
+    window.setFixedSize(1000,650);
 
-    window.setWindowTitle("Модель фокона, версия 0.1");
+    window.setWindowTitle("Модель фокона, версия 0.3");
     window.show();
 
 
