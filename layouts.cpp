@@ -132,16 +132,16 @@ void Layouts::clear() {
 void Layouts::draw(int rotation_angle) {
     for (int i = 0; i < points.size()-1; ++i) {
         qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
-        QLineF line = QLineF(points[i].z() * scale, (points[i].y()*qCos(theta) + points[i].x()*qSin(theta)) * scale+250,
-                             points[i+1].z()* scale, (points[i+1].y()*qCos(theta) + points[i+1].x()*qSin(theta))* scale+250);
+        QLineF line = QLineF(points[i].z() * scale, -(-points[i].y()*qCos(theta) + points[i].x()*qSin(theta)) * scale+250,
+                             points[i+1].z()* scale, -(-points[i+1].y()*qCos(theta) + points[i+1].x()*qSin(theta))* scale+250);
         beams.push_back(new QGraphicsLineItem(line));
         scene->addItem(beams.back());
 
 
-        QLineF line_xoy = QLineF((points[i].x()*qCos(theta) - points[i].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                                 (points[i].x()*qSin(theta) + points[i].y()*qCos(theta))*scale_xoy + diameter/2,
-                                 (points[i+1].x()*qCos(theta) - points[i+1].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                                 (points[i+1].x()*qSin(theta) + points[i+1].y()*qCos(theta))*scale_xoy + diameter/2);
+        QLineF line_xoy = QLineF(-(points[i].x()*qCos(theta) + points[i].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
+                                 -(points[i].x()*qSin(theta) - points[i].y()*qCos(theta))*scale_xoy + diameter/2,
+                                 -(points[i+1].x()*qCos(theta) + points[i+1].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
+                                 -(points[i+1].x()*qSin(theta) - points[i+1].y()*qCos(theta))*scale_xoy + diameter/2);
         beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
         scene->addItem(beams_xoy.back());
 
@@ -177,7 +177,7 @@ void Layouts::build() {
     circle_out->setRect(circle_out_x, circle_out_y,diameter_outer,diameter_outer);
 
     // updating geometry
-    start = {offset->value(), -height->value(), 0};
+    start = {-offset->value(), -height->value(), 0};
 //    start = {0, height->value(), 0};
     cone = Cone(d_in->value(), d_out->value(), length->value());
     beam = Beam(start, angle->value());
@@ -195,7 +195,7 @@ void Layouts::build() {
             QLineF line = {0, 0, i_point.x(), i_point.y()};
             qDebug() << line.angle();
             qreal ksi = qDegreesToRadians(-90 + line.angle());
-            qreal phi = cone.phi() * (beam.d_y() >= 0 ? -1 : 1);
+            qreal phi = cone.phi();
             qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
             Matrix m = Matrix(ksi, phi);
 

@@ -3,13 +3,13 @@
 
 Matrix::Matrix(qreal ksi, qreal phi) {
     a[0][0] = qCos(ksi);
-    a[0][1] = -qSin(ksi)*qCos(phi);
-    a[0][2] = qSin(ksi)*qSin(phi);
-    a[1][0] = qSin(ksi);
+    a[0][1] = -qSin(ksi);
+    a[0][2] = 0;
+    a[1][0] = qSin(ksi)*qCos(phi);
     a[1][1] = qCos(ksi)*qCos(phi);
-    a[1][2] = -qCos(ksi)*qSin(phi);
-    a[2][0] = 0;
-    a[2][1] = qSin(phi);
+    a[1][2] = -qSin(phi);
+    a[2][0] = qSin(ksi)*qSin(phi);
+    a[2][1] = qCos(ksi)*qSin(phi);
     a[2][2] = qCos(phi);
 }
 
@@ -21,9 +21,11 @@ Matrix Matrix::transponed() {
 }
 
 Beam Matrix::operator* (const Beam& b) {
+    qDebug() << "dx =" << b.d_x() << "dy =" << b.d_y() << "dz =" << b.d_z();
     qreal dx = b.d_x()*a[0][0] + b.d_y()*a[0][1] + b.d_z()*a[0][2];
     qreal dy = b.d_x()*a[1][0] + b.d_y()*a[1][1] + b.d_z()*a[1][2];
     qreal dz = b.d_x()*a[2][0] + b.d_y()*a[2][1] + b.d_z()*a[2][2];
+    qDebug() << "dx' =" << dx << "dy' =" << dy << "dz' =" << dz;
     return Beam(b.p1(), dx, dy, dz);
 }
 
@@ -52,8 +54,8 @@ Point Beam::intersection(const Cone& cone) {
     qreal c = pow(x(), 2) + pow(y(), 2) - pow((z() - cone.z_k()) * cone.tan_phi(), 2);
     qreal d = pow(b, 2) - 4*a*c;
     if (d >= 0) {
-        qDebug() << "a " << a << "b " << b << "c " << c;
-        qDebug() << "Дискриминант " << d;
+//        qDebug() << "a " << a << "b " << b << "c " << c;
+//        qDebug() << "Дискриминант " << d;
         t1 = (-b + qSqrt(d)) / (2*a);
         t2 = (-b - qSqrt(d)) / (2*a);
 
