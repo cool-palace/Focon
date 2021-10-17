@@ -189,7 +189,7 @@ void Layouts::build() {
     do {
         Point i_point = beam.intersection(cone);
         if (i_point.z() != -1) {
-    //        qDebug() << "(пересечение)" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
+            qDebug() << "(пересечение)" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
             points.push_back(i_point);
 
             QLineF line = {0, 0, i_point.x(), i_point.y()};
