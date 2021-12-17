@@ -24,13 +24,6 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-//    QPushButton *calc;
-
-//    QGraphicsScene* scene;
-//    QGraphicsView* view;
-//    QGraphicsLineItem * y_axis;
-//    QGraphicsLineItem * z_axis;
-
 public slots:
     void rotate(int rotation_angle);
     void build();
@@ -58,7 +51,8 @@ private:
 
     void clear();
     void draw(int rotation_angle);
-    void draw_outer_circle();
+    void init();
+    void set_outer_circle();
     //    QGraphicsTextItem * result;
 };
 #endif // MAINWINDOW_H

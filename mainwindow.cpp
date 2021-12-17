@@ -9,30 +9,18 @@ MainWindow::MainWindow(QWidget *parent)
     , scene(new QGraphicsScene())
     , y_axis(new QGraphicsLineItem(0,0,0,500))
     , z_axis(new QGraphicsLineItem(0,250,800,250))
+    , focon_up(new QGraphicsLineItem())
+    , focon_down(new QGraphicsLineItem())
+    , circle(new QGraphicsEllipseItem())
     , circle_out(new QGraphicsEllipseItem())
 
 {
     ui->setupUi(this);
 
-    ui->height->setMaximum(ui->d_in->value()/2);
-    ui->height->setMinimum(-ui->d_in->value()/2);
-
-    ui->offset->setMaximum(ui->d_in->value()/2);
-    ui->offset->setMinimum(-ui->d_in->value()/2);
-
-    start = Point(0, ui->height->value(), 0);
-    cone = Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value());
-    beam = Beam(start, 0, qSin(ui->angle->value()), qCos(ui->angle->value()));
-    scale = 800 / ui->length->value();
-    scale_xoy = diameter / ui->d_in->value();
-
     ui->view->setScene(scene);
     scene->setSceneRect(0, 0, 800, 600);
 
-    focon_up = new QGraphicsLineItem(0, 250 - cone.r1() * scale, 800, 250 - cone.r2() * scale);
-    focon_down = new QGraphicsLineItem(0, 250 + cone.r1() * scale, 800, 250 + cone.r2() * scale);
-    circle = new QGraphicsEllipseItem(scene->width()-diameter, 0, diameter, diameter);
-    draw_outer_circle();
+    init();
 
 //    //result = new QGraphicsTextItem();
 
@@ -49,13 +37,31 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::draw_outer_circle() {
-    qreal diameter_outer = diameter*ui->d_out->value()/ui->d_in->value();
+void MainWindow::init() {
+    // rescaling
+    scale = 800 / ui->length->value();
+    scale_xoy = diameter / qMax(ui->d_in->value(), ui->d_out->value());
+
+    // updating spinboxes
+    ui->height->setMaximum(ui->d_in->value()/2);
+    ui->height->setMinimum(-ui->d_in->value()/2);
+    ui->offset->setMaximum(ui->d_in->value()/2);
+    ui->offset->setMinimum(-ui->d_in->value()/2);
+
+    // updating cone's xoy projection
+    qreal diameter_outer = qMin(ui->d_out->value(),ui->d_in->value()) * scale_xoy;
     qreal circle_out_x = scene->width() - diameter/2 - diameter_outer/2;
     qreal circle_out_y = diameter/2 - diameter_outer/2;
     circle_out->setRect(circle_out_x,circle_out_y, diameter_outer, diameter_outer);
-}
+    circle->setRect(scene->width()-diameter, 0, diameter, diameter);
 
+    // updating geometry
+    start = Point(-ui->offset->value(), -ui->height->value(), 0);
+    cone = Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value());
+    beam = Beam(start, ui->angle->value());
+    focon_up->setLine(0, 250 - cone.r1() * scale, 800, 250 - cone.r2() * scale);
+    focon_down->setLine(0, 250 + cone.r1() * scale, 800, 250 + cone.r2() * scale);
+}
 
 void MainWindow::clear() {
     for (int i = 0; i < beams.size(); ++i) {
@@ -101,24 +107,7 @@ void MainWindow::build() {
     clear();
     points.clear();
 
-    // rescaling
-    scale = 800 / ui->length->value();
-    scale_xoy = diameter / ui->d_in->value();
-
-    // updating spinboxes
-    ui->height->setMaximum(ui->d_in->value()/2);
-    ui->height->setMinimum(-ui->d_in->value()/2);
-    ui->d_out->setMaximum(ui->d_in->value()-0.5);
-
-    // updating cone's xoy projection
-    draw_outer_circle();
-
-    // updating geometry
-    start = {-ui->offset->value(), -ui->height->value(), 0};
-    cone = Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value());
-    beam = Beam(start, ui->angle->value());
-    focon_up->setLine(0, 250 - cone.r1() * scale, 800, 250 - cone.r2() * scale);
-    focon_down->setLine(0, 250 + cone.r1() * scale, 800, 250 + cone.r2() * scale);
+    init();
 
     points.push_back(start);
 
@@ -144,8 +133,3 @@ void MainWindow::build() {
     draw(ui->rotation->value());
 
 }
-
-
-
-
-
