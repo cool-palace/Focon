@@ -10,7 +10,11 @@
 #include <QDoubleSpinBox>
 #include <QGraphicsView>
 #include <QGraphicsLineItem>
+#include "geometry.h"
 
+QT_BEGIN_NAMESPACE
+namespace Ui { class MainWindow; }
+QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
@@ -20,20 +24,41 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    QDoubleSpinBox * d_in;
-    QDoubleSpinBox * d_out;
-    QDoubleSpinBox * length;
-    QDoubleSpinBox * angle;
+//    QPushButton *calc;
 
-    QPushButton *calc;
-
-    QGraphicsScene* scene;
-    QGraphicsView* view;
-    QGraphicsLineItem * y_axis;
-    QGraphicsLineItem * z_axis;
+//    QGraphicsScene* scene;
+//    QGraphicsView* view;
+//    QGraphicsLineItem * y_axis;
+//    QGraphicsLineItem * z_axis;
 
 public slots:
-    void move();
+    void rotate(int rotation_angle);
+    void build();
 
+private:
+    Ui::MainWindow *ui;
+
+    Point start;
+    Cone cone;
+    Beam beam;
+    qreal scale;
+    qreal scale_xoy;
+
+    QGraphicsScene* scene;
+    QGraphicsLineItem * y_axis;
+    QGraphicsLineItem * z_axis;
+    QGraphicsLineItem * focon_up;
+    QGraphicsLineItem * focon_down;
+    QGraphicsEllipseItem * circle;
+    QGraphicsEllipseItem * circle_out;
+
+    QVector<QGraphicsLineItem *> beams;
+    QVector<QGraphicsLineItem *> beams_xoy;
+    QVector<Point> points;
+
+    void clear();
+    void draw(int rotation_angle);
+    void draw_outer_circle();
+    //    QGraphicsTextItem * result;
 };
 #endif // MAINWINDOW_H

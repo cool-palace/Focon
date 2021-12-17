@@ -21,11 +21,11 @@ Matrix Matrix::transponed() {
 }
 
 Beam Matrix::operator* (const Beam& b) {
-    qDebug() << "dx =" << b.d_x() << "dy =" << b.d_y() << "dz =" << b.d_z();
+//    qDebug() << "dx =" << b.d_x() << "dy =" << b.d_y() << "dz =" << b.d_z();
     qreal dx = b.d_x()*a[0][0] + b.d_y()*a[0][1] + b.d_z()*a[0][2];
     qreal dy = b.d_x()*a[1][0] + b.d_y()*a[1][1] + b.d_z()*a[1][2];
     qreal dz = b.d_x()*a[2][0] + b.d_y()*a[2][1] + b.d_z()*a[2][2];
-    qDebug() << "dx' =" << dx << "dy' =" << dy << "dz' =" << dz;
+//    qDebug() << "dx' =" << dx << "dy' =" << dy << "dz' =" << dz;
     return Beam(b.p1(), dx, dy, dz);
 }
 
@@ -34,7 +34,7 @@ Cone::Cone() : l(1), tan_f(1), z_vertex(1) {}
 Cone::Cone(qreal D1, qreal D2, qreal l) :
     l(l), tan_f((D1-D2)/(2*l)), z_vertex(D1*l/(D1-D2)) {}
 
-Beam Beam::unit(Point p) {
+Beam Beam::unit(const Point& p) {
     return Beam(p, cos_a(), cos_b(), cos_g());
 }
 
@@ -48,12 +48,13 @@ Point Beam::intersection(const Cone& cone) {
     qreal c = pow(x(), 2) + pow(y(), 2) - pow((z() - cone.z_k()) * cone.tan_phi(), 2);
     qreal d = pow(b, 2) - 4*a*c;
     qreal t1 = (-b + qSqrt(d)) / (2*a);
-    Point p1 = {x() + t1 * cos_a(), y() + t1 * cos_b(), z() + t1 * cos_g()};
-
+    Point p1 = {x() + t1*cos_a(), y() + t1*cos_b(), z() + t1*cos_g()};
+//    qDebug() << qSqrt(p1.x()*p1.x() + p1.y()*p1.y()) << ' ' << (cone.z_k() - p1.z())*cone.tan_phi();
     // The following condition fixes the bug when the beam goes outward
     // if its direction becomes almost parallel to the cone's inner surface
-    if (qFabs(qSqrt(p1.x()*p1.x() + p1.y()*p1.y()) - (cone.z_k() - p1.z())*cone.tan_phi()) > 1e-10) {
-        p1 = {x() - t1 * cos_a(), y() - t1 * cos_b(), z() - t1 * cos_g()};
+    bool correct_root = qFabs(qSqrt(p1.x()*p1.x() + p1.y()*p1.y()) - (cone.z_k() - p1.z())*cone.tan_phi()) < 1e-6;
+    if (!correct_root) {
+        p1 = {x() - t1*cos_a(), y() - t1*cos_b(), z() - t1*cos_g()};
     }
     return p1;
 }

@@ -25,12 +25,10 @@ public:
 
     qreal length() const { return l; }
     qreal z_k() const { return z_vertex; }
-    qreal r1() const { return z_vertex * tan_f; }
-    qreal r2() const { return (z_vertex - l) * tan_f; }
+    qreal r1() const { return z_vertex*tan_f; }
+    qreal r2() const { return (z_vertex - l)*tan_f; }
     qreal tan_phi() const  { return tan_f; }
     qreal phi() const { return qAtan(tan_f); }
-
-    //void setCone(qreal D1, qreal D2, qreal l);
 };
 
 class Beam {
@@ -60,10 +58,9 @@ public:
 
     Point intersection(const Cone& c);
 
-    Beam unit(Point p);
+    Beam unit(const Point& p);
 
     void reflect();
-    //void setBeam(Point p, qreal dx, qreal dy, qreal dz);
 };
 
 class Matrix {
@@ -71,9 +68,7 @@ private:
     qreal a[3][3];
 public:
     Matrix(qreal ksi, qreal phi);
-
     Matrix transponed();
-
     Beam operator* (const Beam& b);
 };
 

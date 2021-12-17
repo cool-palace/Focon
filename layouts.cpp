@@ -73,7 +73,7 @@ Layouts::Layouts(QWidget *parent) : QWidget(parent)
     scene = new QGraphicsScene();
     view = new QGraphicsView(scene);
     scene->setSceneRect(0, 0, 800, 600);
-    view->setScene(scene); // That connects the view with the scene
+    view->setScene(scene);
 
     y_axis = new QGraphicsLineItem(0,0,0,500);
     z_axis = new QGraphicsLineItem(0,250,800,250);
@@ -114,16 +114,12 @@ Layouts::Layouts(QWidget *parent) : QWidget(parent)
 }
 
 void Layouts::clear() {
-    // Deleting existing beams
     for (int i = 0; i < beams.size(); ++i) {
-        //scene->removeItem(beams[i]);
         delete beams[i];
     }
     beams.clear();
 
-    //scene->removeItem(xoy_projection);
     for (int i = 0; i < beams_xoy.size(); ++i) {
-        //scene->removeItem(beams_xoy[i]);
         delete beams_xoy[i];
     }
     beams_xoy.clear();
@@ -178,25 +174,24 @@ void Layouts::build() {
 
     // updating geometry
     start = {-offset->value(), -height->value(), 0};
-//    start = {0, height->value(), 0};
     cone = Cone(d_in->value(), d_out->value(), length->value());
     beam = Beam(start, angle->value());
     focon_up->setLine(0, 250 - cone.r1() * scale, 800, 250 - cone.r2() * scale);
     focon_down->setLine(0, 250 + cone.r1() * scale, 800, 250 + cone.r2() * scale);
 
     points.push_back(start);
-//    int i = 0;
+
     do {
         Point i_point = beam.intersection(cone);
         if (i_point.z() != -1) {
-            qDebug() << "(пересечение)" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
+//            qDebug() << "(пересечение)" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
             points.push_back(i_point);
 
             QLineF line = {0, 0, i_point.x(), i_point.y()};
-            qDebug() << line.angle();
+//            qDebug() << line.angle();
             qreal ksi = qDegreesToRadians(-90 + line.angle());
             qreal phi = cone.phi();
-            qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
+//            qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
             Matrix m = Matrix(ksi, phi);
 
             Beam transformed_beam = m*beam.unit(i_point);
@@ -204,49 +199,8 @@ void Layouts::build() {
             beam = m.transponed()*transformed_beam;
         } else break;
     } while (points.back().z() > 0 && points.back().z() < cone.length());
-//    } while (points.back().z() > points[points.size()-2].z() && points.back().z() < cone.length());
 
     draw(rotation->value());
-
-
-//    // calculating beam path
-//    QPointF start_yoz, delta_yoz, incident;
-//    QLineF beam_yoz;
-
-//    do {
-//        if (beams.empty()) {
-//            // constructing first beam from input data
-//            start_yoz = {0, 250 - height->value() * scale};
-//            delta_yoz = {qCos(qDegreesToRadians(-angle->value())), qSin(qDegreesToRadians(-angle->value()))};
-//            beam_yoz = {start_yoz, start_yoz + delta_yoz};
-//        } else {
-//            // calculating reflection
-//            beam_yoz = {beams.back()->line().p2(), beams.back()->line().p1()};
-//            QLineF normal = (beams.back()->line().angle() <= 90 && beams.back()->line().angle() < 270 ? focon_up : focon_down)->line().normalVector();
-//            qreal phi = beam_yoz.angleTo(normal);
-//            beam_yoz.setAngle(beam_yoz.angle() + 2*phi);
-//        }
-
-//        // setting a
-//        beam_yoz.intersects((beam_yoz.angle() <= 180 ? focon_up : focon_down)->line(), &incident);
-//        beam_yoz.setP2(incident);
-//        beams.push_back(new QGraphicsLineItem(beam_yoz));
-//        scene->addItem(beams.back());
-
-//        if (incident.x()/scale >= cone.length()) {
-//            for (int i = 0; i < beams.size(); ++i) {
-//                beams[i]->setPen(QPen(Qt::green));
-//            }
-//            QString res;
-//            qreal exit_angle = beams.back()->line().angle() < 180 ? beams.back()->line().angle() : 360 - beams.back()->line().angle();
-//            res.setNum(exit_angle);
-//            result->setPlainText(res);
-//            scene->addItem(result);
-//        }
-
-//    } while (incident.x()/scale < cone.length() && incident.x()/scale >=0
-//             && (beam_yoz.angle() < 90 || beam_yoz.angle() > 270));
-
 
 }
 
