@@ -32,7 +32,7 @@ private:
     Ui::MainWindow *ui;
 
     Point start;
-    Cone cone;
+    Tube * cone = nullptr;
     Beam beam;
     qreal scale;
     qreal scale_xoy;

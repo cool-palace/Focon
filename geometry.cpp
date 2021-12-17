@@ -29,10 +29,26 @@ Beam Matrix::operator* (const Beam& b) {
     return Beam(b.p1(), dx, dy, dz);
 }
 
-Cone::Cone() : l(1), tan_f(1), z_vertex(1) {}
+Tube::Tube(qreal D1, qreal l) : diameter_in(D1), length_(l) {}
 
-Cone::Cone(qreal D1, qreal D2, qreal l) :
-    l(l), tan_f((D1-D2)/(2*l)), z_vertex(D1*l/(D1-D2)) {}
+qreal Tube::q_a(const Beam& beam) const { return pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2); }
+
+qreal Tube::q_b(const Beam& beam) const { return 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b()); }
+
+qreal Tube::q_c(const Beam& beam) const { return pow(beam.x(), 2) + pow(beam.y(), 2) - pow(r1(), 2); }
+
+qreal Tube::q_d(const Beam& beam) const { return pow(q_b(beam), 2) - 4*q_a(beam)*q_c(beam); }
+
+qreal Tube::q_t(const Beam &beam) const { return (-q_b(beam) + qSqrt(q_d(beam))) / (2*q_a(beam)); }
+
+Cone::Cone(qreal D1, qreal D2, qreal l) : Tube(D1, l),
+    diameter_out(D2) {}
+
+qreal Cone::q_a(const Beam& beam) const { return pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2) - pow(beam.cos_g()*tan_phi(), 2); }
+
+qreal Cone::q_b(const Beam& beam) const { return 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2)); }
+
+qreal Cone::q_c(const Beam& beam) const { return pow(beam.x(), 2) + pow(beam.y(), 2) - pow((beam.z() - z_k()) * tan_phi(), 2); }
 
 Beam Beam::unit(const Point& p) {
     return Beam(p, cos_a(), cos_b(), cos_g());
@@ -42,20 +58,18 @@ void Beam::reflect() {
     dy *= -1;
 }
 
-Point Beam::intersection(const Cone& cone) {
-    qreal a = pow(cos_a(), 2) + pow(cos_b(), 2) - pow(cos_g()*cone.tan_phi(), 2);
-    qreal b = 2 * (x() * cos_a() + y() * cos_b() - (z() - cone.z_k()) * cos_g() * pow(cone.tan_phi(), 2));
-    qreal c = pow(x(), 2) + pow(y(), 2) - pow((z() - cone.z_k()) * cone.tan_phi(), 2);
-    qreal d = pow(b, 2) - 4*a*c;
-    qreal t1 = (-b + qSqrt(d)) / (2*a);
-    Point p1 = {x() + t1*cos_a(), y() + t1*cos_b(), z() + t1*cos_g()};
-//    qDebug() << qSqrt(p1.x()*p1.x() + p1.y()*p1.y()) << ' ' << (cone.z_k() - p1.z())*cone.tan_phi();
-    // The following condition fixes the bug when the beam goes outward
-    // if its direction becomes almost parallel to the cone's inner surface
-    bool correct_root = qFabs(qSqrt(p1.x()*p1.x() + p1.y()*p1.y()) - (cone.z_k() - p1.z())*cone.tan_phi()) < 1e-6;
-    if (!correct_root) {
-        p1 = {x() - t1*cos_a(), y() - t1*cos_b(), z() - t1*cos_g()};
-    }
-    return p1;
+Point Tube::intersection(const Beam &beam) const {
+    return Point(beam.x() + q_t(beam)*beam.cos_a(), beam.y() + q_t(beam)*beam.cos_b(), beam.z() + q_t(beam)*beam.cos_g());
 }
 
+Point Cone::intersection(const Beam& beam) const {
+    Point p = Tube::intersection(beam);
+//    qDebug() << qSqrt(p1.x()*p1.x() + p1.y()*p1.y()) << ' ' << (cone.z_k() - p1.z())*cone.tan_phi();
+    // The following condition fixes the bug when the beam goes outward
+    // while its direction becomes almost parallel to the cone's inner surface
+    bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
+    if (!correct_root) {
+        p = Point(beam.x() - q_t(beam)*beam.cos_a(), beam.y() - q_t(beam)*beam.cos_b(), beam.z() - q_t(beam)*beam.cos_g());
+    }
+    return p;
+}

@@ -57,10 +57,13 @@ void MainWindow::init() {
 
     // updating geometry
     start = Point(-ui->offset->value(), -ui->height->value(), 0);
-    cone = Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value());
+    if (cone != nullptr) delete cone;
+    cone = (ui->d_in->value() != ui->d_out->value()
+                ? new Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value())
+                : new Tube(ui->d_in->value(), ui->length->value()));
     beam = Beam(start, ui->angle->value());
-    focon_up->setLine(0, 250 - cone.r1() * scale, 800, 250 - cone.r2() * scale);
-    focon_down->setLine(0, 250 + cone.r1() * scale, 800, 250 + cone.r2() * scale);
+    focon_up->setLine(0, 250 - cone->r1() * scale, 800, 250 - cone->r2() * scale);
+    focon_down->setLine(0, 250 + cone->r1() * scale, 800, 250 + cone->r2() * scale);
 }
 
 void MainWindow::clear() {
@@ -91,7 +94,7 @@ void MainWindow::draw(int rotation_angle) {
         beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
         scene->addItem(beams_xoy.back());
 
-        if (points.back().z() > cone.length()) {
+        if (points.back().z() > cone->length()) {
             beams[i]->setPen(QPen(Qt::green));
             beams_xoy[i]->setPen(QPen(Qt::green));
         }
@@ -112,7 +115,7 @@ void MainWindow::build() {
     points.push_back(start);
 
     do {
-        Point i_point = beam.intersection(cone);
+        Point i_point = cone->intersection(beam);
         if (i_point.z() != -1) {
 //            qDebug() << "(пересечение)" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
             points.push_back(i_point);
@@ -120,7 +123,7 @@ void MainWindow::build() {
             QLineF line = {0, 0, i_point.x(), i_point.y()};
 //            qDebug() << line.angle();
             qreal ksi = qDegreesToRadians(-90 + line.angle());
-            qreal phi = cone.phi();
+            qreal phi = cone->phi();
 //            qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
             Matrix m = Matrix(ksi, phi);
 
@@ -128,7 +131,7 @@ void MainWindow::build() {
             transformed_beam.reflect();
             beam = m.transponed()*transformed_beam;
         } else break;
-    } while (points.back().z() > 0 && points.back().z() < cone.length());
+    } while (points.back().z() > 0 && points.back().z() < cone->length());
 
     draw(ui->rotation->value());
 
