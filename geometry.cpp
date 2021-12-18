@@ -64,12 +64,20 @@ Point Tube::intersection(const Beam &beam) const {
 
 Point Cone::intersection(const Beam& beam) const {
     Point p = Tube::intersection(beam);
-//    qDebug() << qSqrt(p1.x()*p1.x() + p1.y()*p1.y()) << ' ' << (cone.z_k() - p1.z())*cone.tan_phi();
-    // The following condition fixes the bug when the beam goes outward
-    // while its direction becomes almost parallel to the cone's inner surface
+//    qDebug() << qSqrt(p.x()*p.x() + p.y()*p.y()) << ' ' << (z_k() - p.z())*tan_phi();
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
     if (!correct_root) {
-        p = Point(beam.x() - q_t(beam)*beam.cos_a(), beam.y() - q_t(beam)*beam.cos_b(), beam.z() - q_t(beam)*beam.cos_g());
+        // False root means that
+        // the beam goes outward without intersecting the cone's surface
+        // (the intersection point is located on the imaginary side).
+        // So the resulting point does not have to belong to the cone's surface
+        // But it has to be located outside of the cone so that no false beams appear from it and the calculations stop.
+        qreal q_t_corrected = q_t(beam);
+        while ((d1() > d2() && beam.z() - q_t_corrected*beam.cos_g() > 0)
+               || (d1() < d2() && beam.z() - q_t_corrected*beam.cos_g() < length())) {
+            q_t_corrected *= 2;
+        }
+        p = Point(beam.x() - q_t_corrected*beam.cos_a(), beam.y() - q_t_corrected*beam.cos_b(), beam.z() - q_t_corrected*beam.cos_g());
     }
     return p;
 }

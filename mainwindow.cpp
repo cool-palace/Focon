@@ -9,8 +9,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , scene(new QGraphicsScene())
-    , y_axis(new QGraphicsLineItem(0,0,0,500))
-    , z_axis(new QGraphicsLineItem(0,250,800,250))
+    , y_axis(new QGraphicsLineItem())
+    , z_axis(new QGraphicsLineItem())
     , focon_up(new QGraphicsLineItem())
     , focon_down(new QGraphicsLineItem())
     , circle(new QGraphicsEllipseItem())
@@ -43,16 +43,18 @@ void MainWindow::showEvent(QShowEvent * event) {
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
-//    qDebug()<< ui->view->sceneRect();
     ui->view->fitInView(ui->view->sceneRect(), Qt::KeepAspectRatio);
 }
 
 void MainWindow::init() {
     qreal x_axis_length = scene->width();
+    qreal y_axis_length = scene->height();
     qreal x_axis_pos = scene->height()/2;
 
     // rescaling
-    scale = x_axis_length / ui->length->value();
+    qreal scale_based_on_length = x_axis_length / ui->length->value();
+    qreal scale_based_on_diameter = y_axis_length / qMax(ui->d_in->value(), ui->d_out->value());
+    scale = qMin(scale_based_on_length, scale_based_on_diameter);
     scale_xoy = diameter / qMax(ui->d_in->value(), ui->d_out->value());
 
     // updating spinboxes
@@ -79,8 +81,8 @@ void MainWindow::init() {
     // updating axes' and cone's yoz projections
     y_axis->setLine(0,0,0,x_axis_pos*2);
     z_axis->setLine(0,x_axis_pos,x_axis_length,x_axis_pos);
-    focon_up->setLine(0, x_axis_pos - cone->r1() * scale, x_axis_length, x_axis_pos - cone->r2() * scale);
-    focon_down->setLine(0, x_axis_pos + cone->r1() * scale, x_axis_length, x_axis_pos + cone->r2() * scale);
+    focon_up->setLine(0, x_axis_pos - cone->r1() * scale, ui->length->value() * scale, x_axis_pos - cone->r2() * scale);
+    focon_down->setLine(0, x_axis_pos + cone->r1() * scale, ui->length->value() * scale, x_axis_pos + cone->r2() * scale);
 }
 
 void MainWindow::clear() {
@@ -135,9 +137,13 @@ void MainWindow::build() {
     points.push_back(start);
 
     do {
+        if (cone->r1() == cone->r2() && fabs(ui->angle->value()) == 90) {
+            ui->statusbar->showMessage("Некорректный входной угол");
+            break;
+        }
         Point i_point = cone->intersection(beam);
         if (i_point.z() != -1) {
-//            qDebug() << "(пересечение)" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
+//            qDebug() << "(пересечение " << points.size()  << ")" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
             points.push_back(i_point);
 
             QLineF line = {0, 0, i_point.x(), i_point.y()};
@@ -154,5 +160,9 @@ void MainWindow::build() {
     } while (points.back().z() > 0 && points.back().z() < cone->length());
 
     draw(ui->rotation->value());
-    ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
+
+    if (points.size() > 1) {
+        ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
+    }
+
 }
