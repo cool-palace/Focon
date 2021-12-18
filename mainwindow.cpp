@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QDebug>
+#include <QResizeEvent>
 
 constexpr qreal diameter = 150;
 
@@ -18,8 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     ui->view->setScene(scene);
-    scene->setSceneRect(0, 0, 800, 600);
-
+    scene->setSceneRect(0,0,ui->view->width(), ui->view->height());
     init();
 
 //    //result = new QGraphicsTextItem();
@@ -37,9 +38,21 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::showEvent(QShowEvent * event) {
+    ui->view->fitInView(ui->view->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event) {
+//    qDebug()<< ui->view->sceneRect();
+    ui->view->fitInView(ui->view->sceneRect(), Qt::KeepAspectRatio);
+}
+
 void MainWindow::init() {
+    qreal x_axis_length = scene->width();
+    qreal x_axis_pos = scene->height()/2;
+
     // rescaling
-    scale = 800 / ui->length->value();
+    scale = x_axis_length / ui->length->value();
     scale_xoy = diameter / qMax(ui->d_in->value(), ui->d_out->value());
 
     // updating spinboxes
@@ -55,15 +68,19 @@ void MainWindow::init() {
     circle_out->setRect(circle_out_x,circle_out_y, diameter_outer, diameter_outer);
     circle->setRect(scene->width()-diameter, 0, diameter, diameter);
 
-    // updating geometry
+    // updating geometrical objects
     start = Point(-ui->offset->value(), -ui->height->value(), 0);
     if (cone != nullptr) delete cone;
     cone = (ui->d_in->value() != ui->d_out->value()
                 ? new Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value())
                 : new Tube(ui->d_in->value(), ui->length->value()));
     beam = Beam(start, ui->angle->value());
-    focon_up->setLine(0, 250 - cone->r1() * scale, 800, 250 - cone->r2() * scale);
-    focon_down->setLine(0, 250 + cone->r1() * scale, 800, 250 + cone->r2() * scale);
+
+    // updating axes' and cone's yoz projections
+    y_axis->setLine(0,0,0,x_axis_pos*2);
+    z_axis->setLine(0,x_axis_pos,x_axis_length,x_axis_pos);
+    focon_up->setLine(0, x_axis_pos - cone->r1() * scale, x_axis_length, x_axis_pos - cone->r2() * scale);
+    focon_down->setLine(0, x_axis_pos + cone->r1() * scale, x_axis_length, x_axis_pos + cone->r2() * scale);
 }
 
 void MainWindow::clear() {
@@ -81,8 +98,8 @@ void MainWindow::clear() {
 void MainWindow::draw(int rotation_angle) {
     for (int i = 0; i < points.size()-1; ++i) {
         qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
-        QLineF line = QLineF(points[i].z() * scale, -(-points[i].y()*qCos(theta) + points[i].x()*qSin(theta)) * scale+250,
-                             points[i+1].z()* scale, -(-points[i+1].y()*qCos(theta) + points[i+1].x()*qSin(theta))* scale+250);
+        QLineF line = QLineF(points[i].z() * scale, -(-points[i].y()*qCos(theta) + points[i].x()*qSin(theta)) * scale + scene->height()/2,
+                             points[i+1].z()* scale, -(-points[i+1].y()*qCos(theta) + points[i+1].x()*qSin(theta))* scale + scene->height()/2);
         beams.push_back(new QGraphicsLineItem(line));
         scene->addItem(beams.back());
 
@@ -97,6 +114,9 @@ void MainWindow::draw(int rotation_angle) {
         if (points.back().z() > cone->length()) {
             beams[i]->setPen(QPen(Qt::green));
             beams_xoy[i]->setPen(QPen(Qt::green));
+        } else {
+            beams[i]->setPen(QPen(Qt::red));
+            beams_xoy[i]->setPen(QPen(Qt::red));
         }
     }
 }
@@ -134,5 +154,5 @@ void MainWindow::build() {
     } while (points.back().z() > 0 && points.back().z() < cone->length());
 
     draw(ui->rotation->value());
-
+    ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
 }

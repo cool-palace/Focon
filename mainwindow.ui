@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>567</width>
-    <height>425</height>
+    <width>836</width>
+    <height>542</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -162,10 +162,37 @@
         </item>
        </layout>
       </item>
-      <item>
-       <widget class="QGraphicsView" name="view"/>
-      </item>
      </layout>
+    </item>
+    <item row="0" column="1">
+     <widget class="QGraphicsView" name="view">
+      <property name="minimumSize">
+       <size>
+        <width>700</width>
+        <height>500</height>
+       </size>
+      </property>
+      <property name="baseSize">
+       <size>
+        <width>700</width>
+        <height>500</height>
+       </size>
+      </property>
+      <property name="sceneRect">
+       <rectf>
+        <x>0.000000000000000</x>
+        <y>0.000000000000000</y>
+        <width>700.000000000000000</width>
+        <height>500.000000000000000</height>
+       </rectf>
+      </property>
+      <property name="renderHints">
+       <set>QPainter::Antialiasing|QPainter::TextAntialiasing</set>
+      </property>
+      <property name="resizeAnchor">
+       <enum>QGraphicsView::AnchorViewCenter</enum>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

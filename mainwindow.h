@@ -49,6 +49,8 @@ private:
     QVector<QGraphicsLineItem *> beams_xoy;
     QVector<Point> points;
 
+    void showEvent(QShowEvent * event) override;
+    void resizeEvent(QResizeEvent * event) override;
     void clear();
     void draw(int rotation_angle);
     void init();
