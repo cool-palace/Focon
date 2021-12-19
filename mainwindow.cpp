@@ -124,6 +124,7 @@ void MainWindow::draw(int rotation_angle) {
 }
 
 void MainWindow::rotate(int rotation_angle) {
+    if (ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION) return;
     clear();
     draw(rotation_angle);
 }
@@ -131,38 +132,88 @@ void MainWindow::rotate(int rotation_angle) {
 void MainWindow::build() {
     clear();
     points.clear();
-
     init();
 
-    points.push_back(start);
+    switch (ui->mode->currentIndex()) {
+    case SINGLE_BEAM_CALCULATION:
+        calculate_single_beam_path();
+        draw(ui->rotation->value());
+        if (points.size() > 1) {
+            ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
+        }
+        break;
+    case SAMPLING_WITH_GIVEN_ANGLE:
+        calculate_beams_with_given_angle();
+        break;
+    default:
+        break;
+    }
 
+}
+
+void MainWindow::calculate_single_beam_path() {
+    points.push_back(start);
     do {
         if (cone->r1() == cone->r2() && fabs(ui->angle->value()) == 90) {
             ui->statusbar->showMessage("Некорректный входной угол");
             break;
         }
         Point i_point = cone->intersection(beam);
-        if (i_point.z() != -1) {
-//            qDebug() << "(пересечение " << points.size()  << ")" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
+//      qDebug() << "(пересечение " << points.size()  << ")" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
+
+        if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION) {
             points.push_back(i_point);
+        } else {
+            points[points.size()-1] = i_point;
+        }
 
-            QLineF line = {0, 0, i_point.x(), i_point.y()};
-//            qDebug() << line.angle();
-            qreal ksi = qDegreesToRadians(-90 + line.angle());
-            qreal phi = cone->phi();
-//            qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
-            Matrix m = Matrix(ksi, phi);
+        QLineF line = QLineF(0, 0, i_point.x(), i_point.y());
+//      qDebug() << line.angle();
+        qreal ksi = qDegreesToRadians(-90 + line.angle());
+        qreal phi = cone->phi();
+//      qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
+        Matrix m = Matrix(ksi, phi);
 
-            Beam transformed_beam = m*beam.unit(i_point);
-            transformed_beam.reflect();
-            beam = m.transponed()*transformed_beam;
-        } else break;
+        Beam transformed_beam = m*beam.unit(i_point);
+        transformed_beam.reflect();
+        beam = m.transponed()*transformed_beam;
     } while (points.back().z() > 0 && points.back().z() < cone->length());
 
-    draw(ui->rotation->value());
 
-    if (points.size() > 1) {
-        ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
+}
+
+void MainWindow::calculate_beams_with_given_angle() {
+    int beams_total = 0;
+    int beams_passed = 0;
+    int count = 20;
+    bool need_to_calculate_beams_in_row = true;
+    int iterations = 0;
+    for (int i = 0; i < count; ++i) {
+        qreal x = i * cone->r1() / count;
+        for (int j = -count; j < count; ++j) {
+            qreal y = j * cone->r1() / count;
+            if (x*x + y*y < cone->r1()*cone->r1()) {
+                start = Point(-x, -y, 0);
+                // The sign of the angle value doesn't affect results
+                // Using its absolute value allows to optimize the calculations
+                beam = Beam(start, fabs(ui->angle->value()));
+                // The results are simmetrical relative to y axis, hence doubling total count for i > 0
+                beams_total += (i > 0 ? 2 : 1);
+                ++iterations;
+                if (need_to_calculate_beams_in_row) {
+                    calculate_single_beam_path();
+                    // If the current beam fais to pass then it's safe to assume
+                    // that calculating any higher beams is useless for current i value
+                    need_to_calculate_beams_in_row = points.back().z() > 0;
+                    if (points.back().z() > 0) {
+                        beams_passed += (i > 0 ? 2 : 1);
+                    }
+                }
+            }
+        }
+        need_to_calculate_beams_in_row = true;
     }
+    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total));
+//                               + ". Проведено " + QString().setNum(iterations) + " итераций.");
 
 }

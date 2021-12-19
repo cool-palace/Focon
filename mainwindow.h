@@ -49,12 +49,20 @@ private:
     QVector<QGraphicsLineItem *> beams_xoy;
     QVector<Point> points;
 
+    enum Mode {
+        SINGLE_BEAM_CALCULATION,
+        SAMPLING_WITH_GIVEN_ANGLE,
+        SAMPLING_WITH_GIVEN_POSITION,
+        MONTE_CARLO_METHOD
+    };
+
     void showEvent(QShowEvent * event) override;
     void resizeEvent(QResizeEvent * event) override;
     void clear();
     void draw(int rotation_angle);
     void init();
-    void set_outer_circle();
+    void calculate_single_beam_path();
+    void calculate_beams_with_given_angle();
     //    QGraphicsTextItem * result;
 };
 #endif // MAINWINDOW_H

@@ -117,8 +117,14 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="height">
+          <property name="minimum">
+           <double>-99.989999999999995</double>
+          </property>
           <property name="singleStep">
            <double>0.500000000000000</double>
+          </property>
+          <property name="value">
+           <double>-10.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -131,9 +137,46 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="offset">
+          <property name="minimum">
+           <double>-99.989999999999995</double>
+          </property>
           <property name="singleStep">
            <double>0.500000000000000</double>
           </property>
+          <property name="value">
+           <double>4.380000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Режим</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="mode">
+          <item>
+           <property name="text">
+            <string>Ход одного луча</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Массив по углу</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Массив по координате</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Метод Монте-Карло</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item>
