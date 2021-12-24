@@ -14,6 +14,7 @@ public:
     qreal x() const { return x_; }
     qreal y() const { return y_; }
     qreal z() const { return z_; }
+    Point x_pair() const { return Point(-x_, y_, z_);};
 };
 
 class Beam {

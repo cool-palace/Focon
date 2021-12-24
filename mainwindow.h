@@ -32,6 +32,7 @@ private:
     Ui::MainWindow *ui;
 
     Point start;
+    Point intersection;
     Tube * cone = nullptr;
     Beam beam;
     qreal scale;
@@ -60,6 +61,7 @@ private:
     void resizeEvent(QResizeEvent * event) override;
     void clear();
     void draw(int rotation_angle);
+    void draw(const Point& p, bool has_passed, int rotation_angle);
     void init();
     void calculate_single_beam_path();
     void calculate_beams_with_given_angle();

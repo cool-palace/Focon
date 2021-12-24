@@ -105,7 +105,6 @@ void MainWindow::draw(int rotation_angle) {
         beams.push_back(new QGraphicsLineItem(line));
         scene->addItem(beams.back());
 
-
         QLineF line_xoy = QLineF(-(points[i].x()*qCos(theta) + points[i].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
                                  -(points[i].x()*qSin(theta) - points[i].y()*qCos(theta))*scale_xoy + diameter/2,
                                  -(points[i+1].x()*qCos(theta) + points[i+1].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
@@ -120,6 +119,22 @@ void MainWindow::draw(int rotation_angle) {
             beams[i]->setPen(QPen(Qt::red));
             beams_xoy[i]->setPen(QPen(Qt::red));
         }
+    }
+}
+
+void MainWindow::draw(const Point& point, bool has_passed, int rotation_angle) {
+    qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
+    QLineF line_xoy = QLineF(-(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
+                             -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2,
+                             -(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
+                             -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2);
+    beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
+    scene->addItem(beams_xoy.back());
+
+    if (has_passed) {
+        beams_xoy.back()->setPen(QPen(Qt::green));
+    } else {
+        beams_xoy.back()->setPen(QPen(Qt::red));
     }
 }
 
@@ -158,26 +173,28 @@ void MainWindow::calculate_single_beam_path() {
             ui->statusbar->showMessage("Некорректный входной угол");
             break;
         }
-        Point i_point = cone->intersection(beam);
+        intersection = cone->intersection(beam);
 //      qDebug() << "(пересечение " << points.size()  << ")" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
 
         if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION) {
-            points.push_back(i_point);
-        } else {
-            points[points.size()-1] = i_point;
+            // Points array forms complete beam path
+            points.push_back(intersection);
+        } else if (ui->mode->currentIndex() == SAMPLING_WITH_GIVEN_ANGLE) {
+            // Points array consists possible entry points
+//            points[points.size()-1] = intersection;
         }
 
-        QLineF line = QLineF(0, 0, i_point.x(), i_point.y());
+        QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
 //      qDebug() << line.angle();
         qreal ksi = qDegreesToRadians(-90 + line.angle());
         qreal phi = cone->phi();
 //      qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
         Matrix m = Matrix(ksi, phi);
 
-        Beam transformed_beam = m*beam.unit(i_point);
+        Beam transformed_beam = m*beam.unit(intersection);
         transformed_beam.reflect();
         beam = m.transponed()*transformed_beam;
-    } while (points.back().z() > 0 && points.back().z() < cone->length());
+    } while (intersection.z() > 0 && intersection.z() < cone->length());
 
 
 }
@@ -187,7 +204,7 @@ void MainWindow::calculate_beams_with_given_angle() {
     int beams_passed = 0;
     int count = 20;
     bool need_to_calculate_beams_in_row = true;
-    int iterations = 0;
+//    int iterations = 0;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
         for (int j = -count; j < count; ++j) {
@@ -199,21 +216,27 @@ void MainWindow::calculate_beams_with_given_angle() {
                 beam = Beam(start, fabs(ui->angle->value()));
                 // The results are simmetrical relative to y axis, hence doubling total count for i > 0
                 beams_total += (i > 0 ? 2 : 1);
-                ++iterations;
+//                ++iterations;
                 if (need_to_calculate_beams_in_row) {
                     calculate_single_beam_path();
-                    // If the current beam fais to pass then it's safe to assume
+                    bool has_passed = false;
+                    // If the current beam fails to pass then it's safe to assume
                     // that calculating any higher beams is useless for current i value
-                    need_to_calculate_beams_in_row = points.back().z() > 0;
-                    if (points.back().z() > 0) {
+                    // При нулевых углах плохо работает, либо исправить, либо забить
+//                    need_to_calculate_beams_in_row = points.back().z() > 0;
+                    if (intersection.z() > 0) {
+                        has_passed = true;
                         beams_passed += (i > 0 ? 2 : 1);
                     }
+                    draw(points.back(), has_passed, ui->rotation->value());
+                    if (x > 0) draw(points.back().x_pair(), has_passed, ui->rotation->value());
                 }
             }
         }
         need_to_calculate_beams_in_row = true;
     }
-    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total));
+    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
+                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
 //                               + ". Проведено " + QString().setNum(iterations) + " итераций.");
 
 }
