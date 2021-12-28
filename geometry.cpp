@@ -50,21 +50,18 @@ Point Tube::intersection(const Beam &beam) const {
     qreal d = pow(b, 2) - 4*a*c;
     qreal t = (-b + qSqrt(d)) / (2*a);
     return Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
-    //return Point(beam.x() + q_t(beam)*beam.cos_a(), beam.y() + q_t(beam)*beam.cos_b(), beam.z() + q_t(beam)*beam.cos_g());
 }
 
 Point Cone::intersection(const Beam& beam) const {
+    if (beam.d_y() == 0 && beam.x() == 0 && beam.y() == 0) {
+        return Point(0, 0, z_k() * (r1() > r2() ? 1 : -1));
+    }
     qreal a = pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2) - pow(beam.cos_g()*tan_phi(), 2);
     qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2));
     qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow((beam.z() - z_k()) * tan_phi(), 2);
     qreal d = pow(b, 2) - 4*a*c;
     qreal t = (-b + qSqrt(d)) / (2*a);
     Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
-
-    if (r1() < r2() && p == vertex()) {
-        // Beam(Point(0,0,0), 0) intersects cone's vertex which is below zero in reverse cones
-        return Point(p.x(), p.y(), -p.z());
-    }
 
 //    qDebug() << qSqrt(p.x()*p.x() + p.y()*p.y()) << ' ' << (z_k() - p.z())*tan_phi();
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;

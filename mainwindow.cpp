@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int mode) {
+        clear();
         switch (mode) {
         case PARALLEL_BUNDLE: case EXHAUSTIVE_SAMPLING: case MONTE_CARLO_METHOD:
             ui->height->setEnabled(false);
@@ -146,7 +147,6 @@ void MainWindow::draw(int rotation_angle) {
 
 void MainWindow::draw(const Point& point, bool has_passed, int rotation_angle) {
     qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
-
     switch (ui->mode->currentIndex()) {
         case PARALLEL_BUNDLE: {
             QLineF line_xoy = QLineF(-(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
@@ -175,30 +175,28 @@ void MainWindow::draw(const Point& point, bool has_passed, int rotation_angle) {
             }
         } break;
     }
-
 }
 
 void MainWindow::rotate(int rotation_angle) {
-//    if (ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION) return;
     clear();
     switch (ui->mode->currentIndex()) {
-        case SINGLE_BEAM_CALCULATION:
-            draw(rotation_angle);
-            break;
-        case PARALLEL_BUNDLE:
-            for (int i = 0; i < points.size(); ++i) {
-                draw(points[i], beam_has_passed[i], rotation_angle);
-                if (points[i].x() != 0) {
-                    draw(points[i].x_pair(), beam_has_passed[i], rotation_angle);
-                }
+    case SINGLE_BEAM_CALCULATION:
+        draw(rotation_angle);
+        break;
+    case PARALLEL_BUNDLE:
+        for (int i = 0; i < points.size(); ++i) {
+            draw(points[i], beam_has_passed[i], rotation_angle);
+            if (points[i].x() != 0) {
+                draw(points[i].x_pair(), beam_has_passed[i], rotation_angle);
             }
-            break;
-        case DIVERGENT_BUNDLE:
-            for (int i = 0; i < points.size(); ++i) {
-                draw(points[i], beam_has_passed[i], rotation_angle);
-            }
-            break;
         }
+        break;
+    case DIVERGENT_BUNDLE:
+        for (int i = 0; i < points.size(); ++i) {
+            draw(points[i], beam_has_passed[i], rotation_angle);
+        }
+        break;
+    }
 }
 
 void MainWindow::build() {
@@ -230,7 +228,6 @@ void MainWindow::build() {
     default:
         break;
     }
-
 }
 
 bool MainWindow::calculate_single_beam_path() {
@@ -273,7 +270,7 @@ bool MainWindow::calculate_single_beam_path() {
         beam = m.transponed()*transformed_beam;
     } while (intersection.z() > 0 && intersection.z() < cone->length());
 
-    return intersection.z() > cone->length() || cone->r1() < cone->r2();
+    return intersection.z() >= cone->length() || cone->r1() < cone->r2();
 }
 
 void MainWindow::calculate_parallel_beams() {
