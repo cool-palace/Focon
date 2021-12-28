@@ -18,13 +18,26 @@ MainWindow::MainWindow(QWidget *parent)
 
 {
     ui->setupUi(this);
+    connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int mode) {
+        switch (mode) {
+        case PARALLEL_BUNDLE: case EXHAUSTIVE_SAMPLING: case MONTE_CARLO_METHOD:
+            ui->height->setEnabled(false);
+            ui->offset->setEnabled(false);
+            break;
+        default:
+            ui->height->setEnabled(true);
+            ui->offset->setEnabled(true);
+            break;
+        }
+    });
 
     ui->view->setScene(scene);
     scene->setSceneRect(0,0,ui->view->width(), ui->view->height());
     init();
 
 //    //result = new QGraphicsTextItem();
-
+    y_axis->setPen(QPen(Qt::DashDotLine));
+    z_axis->setPen(QPen(Qt::DashDotLine));
     scene->addItem(y_axis);
     scene->addItem(z_axis);
     scene->addItem(focon_up);
@@ -81,6 +94,7 @@ void MainWindow::init() {
     // updating axes' and cone's yoz projections
     y_axis->setLine(0,0,0,x_axis_pos*2);
     z_axis->setLine(0,x_axis_pos,x_axis_length,x_axis_pos);
+
     focon_up->setLine(0, x_axis_pos - cone->r1() * scale, ui->length->value() * scale, x_axis_pos - cone->r2() * scale);
     focon_down->setLine(0, x_axis_pos + cone->r1() * scale, ui->length->value() * scale, x_axis_pos + cone->r2() * scale);
 }
@@ -124,18 +138,36 @@ void MainWindow::draw(int rotation_angle) {
 
 void MainWindow::draw(const Point& point, bool has_passed, int rotation_angle) {
     qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
-    QLineF line_xoy = QLineF(-(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                             -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2,
-                             -(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                             -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2);
-    beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
-    scene->addItem(beams_xoy.back());
 
-    if (has_passed) {
-        beams_xoy.back()->setPen(QPen(Qt::green));
-    } else {
-        beams_xoy.back()->setPen(QPen(Qt::red));
+    switch (ui->mode->currentIndex()) {
+        case PARALLEL_BUNDLE: {
+            QLineF line_xoy = QLineF(-(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
+                                     -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2,
+                                     -(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
+                                     -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2);
+            beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
+            scene->addItem(beams_xoy.back());
+
+            if (has_passed) {
+                beams_xoy.back()->setPen(QPen(Qt::green));
+            } else {
+                beams_xoy.back()->setPen(QPen(Qt::red));
+            }
+        } break;
+        case DIVERGENT_BUNDLE: {
+            QLineF line = QLineF(start.z() * scale, -(-start.y()*qCos(theta) + start.x()*qSin(theta)) * scale + scene->height()/2,
+                                 point.z()* scale, -(-point.y()*qCos(theta) + point.x()*qSin(theta))* scale + scene->height()/2);
+            beams.push_back(new QGraphicsLineItem(line));
+            scene->addItem(beams.back());
+
+            if (has_passed) {
+                beams.back()->setPen(QPen(Qt::green));
+            } else {
+                beams.back()->setPen(QPen(Qt::red));
+            }
+        } break;
     }
+
 }
 
 void MainWindow::rotate(int rotation_angle) {
@@ -157,8 +189,17 @@ void MainWindow::build() {
             ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
         }
         break;
-    case SAMPLING_WITH_GIVEN_ANGLE:
-        calculate_beams_with_given_angle();
+    case PARALLEL_BUNDLE:
+        calculate_parallel_beams();
+        break;
+    case DIVERGENT_BUNDLE:
+        calculate_divergent_beams();
+        break;
+    case EXHAUSTIVE_SAMPLING:
+        calculate_every_beam();
+        break;
+    case MONTE_CARLO_METHOD:
+        monte_carlo_method();
         break;
     default:
         break;
@@ -176,12 +217,20 @@ void MainWindow::calculate_single_beam_path() {
         intersection = cone->intersection(beam);
 //      qDebug() << "(пересечение " << points.size()  << ")" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
 
-        if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION) {
+        switch (ui->mode->currentIndex()) {
+        case SINGLE_BEAM_CALCULATION:
             // Points array forms complete beam path
             points.push_back(intersection);
-        } else if (ui->mode->currentIndex() == SAMPLING_WITH_GIVEN_ANGLE) {
+            break;
+        case PARALLEL_BUNDLE:
             // Points array consists possible entry points
-//            points[points.size()-1] = intersection;
+            break;
+        case DIVERGENT_BUNDLE:
+            // Points array consists first intersection points
+            if (points.back() == start) {
+                points.back() = intersection;
+            }
+            break;
         }
 
         QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
@@ -199,44 +248,97 @@ void MainWindow::calculate_single_beam_path() {
 
 }
 
-void MainWindow::calculate_beams_with_given_angle() {
+void MainWindow::calculate_parallel_beams() {
     int beams_total = 0;
     int beams_passed = 0;
     int count = 20;
-    bool need_to_calculate_beams_in_row = true;
-//    int iterations = 0;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
         for (int j = -count; j < count; ++j) {
             qreal y = j * cone->r1() / count;
             if (x*x + y*y < cone->r1()*cone->r1()) {
                 start = Point(-x, -y, 0);
-                // The sign of the angle value doesn't affect results
-                // Using its absolute value allows to optimize the calculations
-                beam = Beam(start, fabs(ui->angle->value()));
+                beam = Beam(start, ui->angle->value());
                 // The results are simmetrical relative to y axis, hence doubling total count for i > 0
                 beams_total += (i > 0 ? 2 : 1);
-//                ++iterations;
-                if (need_to_calculate_beams_in_row) {
-                    calculate_single_beam_path();
-                    bool has_passed = false;
-                    // If the current beam fails to pass then it's safe to assume
-                    // that calculating any higher beams is useless for current i value
-                    // При нулевых углах плохо работает, либо исправить, либо забить
-//                    need_to_calculate_beams_in_row = points.back().z() > 0;
-                    if (intersection.z() > 0) {
-                        has_passed = true;
-                        beams_passed += (i > 0 ? 2 : 1);
-                    }
-                    draw(points.back(), has_passed, ui->rotation->value());
-                    if (x > 0) draw(points.back().x_pair(), has_passed, ui->rotation->value());
+                calculate_single_beam_path();
+                bool has_passed = intersection.z() > cone->length();
+                if (has_passed) {
+                    beams_passed += (i > 0 ? 2 : 1);
+                }
+                draw(points.back(), has_passed, ui->rotation->value());
+                if (x > 0) {
+                    draw(points.back().x_pair(), has_passed, ui->rotation->value());
                 }
             }
         }
-        need_to_calculate_beams_in_row = true;
     }
     ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
                                + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
-//                               + ". Проведено " + QString().setNum(iterations) + " итераций.");
 
+}
+
+QPair<int, int> MainWindow::calculate_divergent_beams() {
+    int beams_total = 0;
+    int beams_passed = 0;
+    int count = 10;
+    int limit = abs(ui->angle->value()) * count;
+    for (int i = -limit; i <= limit; ++i) {
+        qreal x = static_cast<qreal>(i) / count;
+        beam = Beam(start, x);
+        ++beams_total;
+        calculate_single_beam_path();
+        bool has_passed = intersection.z() > cone->length();
+        if (has_passed) {
+            ++beams_passed;
+        }
+        draw(points.back(), has_passed, ui->rotation->value());
+    }
+    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
+                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
+    return qMakePair(beams_passed, beams_total);
+}
+
+void MainWindow::calculate_every_beam() {
+    int beams_total = 0;
+    int beams_passed = 0;
+    int count = 20;
+    for (int i = 0; i < count; ++i) {
+        qreal x = i * cone->r1() / count;
+        for (int j = -count; j < count; ++j) {
+            qreal y = j * cone->r1() / count;
+            if (x*x + y*y < cone->r1()*cone->r1()) {
+                start = Point(-x, -y, 0);
+                QPair<int, int> current_result = calculate_divergent_beams();
+                // The results are simmetrical relative to y axis, hence doubling total count for i > 0
+                beams_passed += (i > 0 ? 2 : 1) * current_result.first;
+                beams_total += (i > 0 ? 2 : 1) * current_result.second;
+            }
+        }
+    }
+    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
+                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
+}
+
+void MainWindow::monte_carlo_method() {
+    int beams_total = 0;
+    int beams_passed = 0;
+    int count = 100000;
+    QRandomGenerator rng;
+    for (int i = 0; i < count; ++i) {
+        qreal x = 2 * rng.generateDouble() - 1;
+        qreal y = 2 * rng.generateDouble() - 1;
+        start = Point(x * cone->r1(), y * cone->r1(), 0);
+        if (x*x + y*y < cone->r1()*cone->r1()) {
+            beam = Beam(start, (2 * rng.generateDouble() - 1) * fabs(ui->angle->value()));
+            ++beams_total;
+            calculate_single_beam_path();
+            bool has_passed = intersection.z() > cone->length();
+            if (has_passed) {
+                ++beams_passed;
+            }
+        } else --i;
+    }
+    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
+                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
 }

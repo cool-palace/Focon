@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>836</width>
+    <width>872</width>
     <height>542</height>
    </rect>
   </property>
@@ -22,7 +22,7 @@
         <item>
          <widget class="QLabel" name="label_d_in">
           <property name="text">
-           <string>Диаметр вх.</string>
+           <string>Диаметр вх.апертуры, мм</string>
           </property>
          </widget>
         </item>
@@ -45,7 +45,7 @@
         <item>
          <widget class="QLabel" name="label_d_out">
           <property name="text">
-           <string>Диаметр вых.</string>
+           <string>Диаметр вых.апертуры, мм</string>
           </property>
          </widget>
         </item>
@@ -68,7 +68,7 @@
         <item>
          <widget class="QLabel" name="label_length">
           <property name="text">
-           <string>Длина</string>
+           <string>Длина фокона, мм</string>
           </property>
          </widget>
         </item>
@@ -88,7 +88,7 @@
         <item>
          <widget class="QLabel" name="label_angle">
           <property name="text">
-           <string>Угол вх.</string>
+           <string>Угол входа, град.</string>
           </property>
          </widget>
         </item>
@@ -111,7 +111,7 @@
         <item>
          <widget class="QLabel" name="label_height">
           <property name="text">
-           <string>Верт. смещение луча</string>
+           <string>Смещение луча по оси Y, мм</string>
           </property>
          </widget>
         </item>
@@ -124,14 +124,14 @@
            <double>0.500000000000000</double>
           </property>
           <property name="value">
-           <double>-10.000000000000000</double>
+           <double>0.000000000000000</double>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QLabel" name="label_offset">
           <property name="text">
-           <string>Гор. смещение луча</string>
+           <string>Смещение луча по оси X, мм</string>
           </property>
          </widget>
         </item>
@@ -144,7 +144,7 @@
            <double>0.500000000000000</double>
           </property>
           <property name="value">
-           <double>4.380000000000000</double>
+           <double>0.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -164,12 +164,17 @@
           </item>
           <item>
            <property name="text">
-            <string>Массив по углу</string>
+            <string>Параллельный пучок</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Массив по координате</string>
+            <string>Расходящийся пучок</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Полный перебор</string>
            </property>
           </item>
           <item>
@@ -250,8 +255,8 @@
    <slot>build()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>58</x>
-     <y>383</y>
+     <x>69</x>
+     <y>508</y>
     </hint>
     <hint type="destinationlabel">
      <x>34</x>
@@ -266,8 +271,8 @@
    <slot>rotate(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>84</x>
-     <y>326</y>
+     <x>95</x>
+     <y>481</y>
     </hint>
     <hint type="destinationlabel">
      <x>6</x>

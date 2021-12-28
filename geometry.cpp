@@ -31,24 +31,8 @@ Beam Matrix::operator* (const Beam& b) {
 
 Tube::Tube(qreal D1, qreal l) : diameter_in(D1), length_(l) {}
 
-qreal Tube::q_a(const Beam& beam) const { return pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2); }
-
-qreal Tube::q_b(const Beam& beam) const { return 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b()); }
-
-qreal Tube::q_c(const Beam& beam) const { return pow(beam.x(), 2) + pow(beam.y(), 2) - pow(r1(), 2); }
-
-qreal Tube::q_d(const Beam& beam) const { return pow(q_b(beam), 2) - 4*q_a(beam)*q_c(beam); }
-
-qreal Tube::q_t(const Beam &beam) const { return (-q_b(beam) + qSqrt(q_d(beam))) / (2*q_a(beam)); }
-
 Cone::Cone(qreal D1, qreal D2, qreal l) : Tube(D1, l),
     diameter_out(D2) {}
-
-qreal Cone::q_a(const Beam& beam) const { return pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2) - pow(beam.cos_g()*tan_phi(), 2); }
-
-qreal Cone::q_b(const Beam& beam) const { return 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2)); }
-
-qreal Cone::q_c(const Beam& beam) const { return pow(beam.x(), 2) + pow(beam.y(), 2) - pow((beam.z() - z_k()) * tan_phi(), 2); }
 
 Beam Beam::unit(const Point& p) {
     return Beam(p, cos_a(), cos_b(), cos_g());
@@ -59,11 +43,24 @@ void Beam::reflect() {
 }
 
 Point Tube::intersection(const Beam &beam) const {
-    return Point(beam.x() + q_t(beam)*beam.cos_a(), beam.y() + q_t(beam)*beam.cos_b(), beam.z() + q_t(beam)*beam.cos_g());
+    if (beam.d_y() == 0) return Point(beam.x(), beam.y(), 2*length());
+    qreal a = pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2);
+    qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b());
+    qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow(r1(), 2);
+    qreal d = pow(b, 2) - 4*a*c;
+    qreal t = (-b + qSqrt(d)) / (2*a);
+    return Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
+    //return Point(beam.x() + q_t(beam)*beam.cos_a(), beam.y() + q_t(beam)*beam.cos_b(), beam.z() + q_t(beam)*beam.cos_g());
 }
 
 Point Cone::intersection(const Beam& beam) const {
-    Point p = Tube::intersection(beam);
+    qreal a = pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2) - pow(beam.cos_g()*tan_phi(), 2);
+    qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2));
+    qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow((beam.z() - z_k()) * tan_phi(), 2);
+    qreal d = pow(b, 2) - 4*a*c;
+    qreal t = (-b + qSqrt(d)) / (2*a);
+    Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
+
 //    qDebug() << qSqrt(p.x()*p.x() + p.y()*p.y()) << ' ' << (z_k() - p.z())*tan_phi();
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
     if (!correct_root) {
@@ -72,12 +69,11 @@ Point Cone::intersection(const Beam& beam) const {
         // (the intersection point is located on the imaginary side).
         // So the resulting point does not have to belong to the cone's surface
         // But it has to be located outside of the cone so that no false beams appear from it and the calculations stop.
-        qreal q_t_corrected = q_t(beam);
-        while ((d1() > d2() && beam.z() - q_t_corrected*beam.cos_g() > 0)
-               || (d1() < d2() && beam.z() - q_t_corrected*beam.cos_g() < length())) {
-            q_t_corrected *= 2;
+        while ((d1() > d2() && beam.z() - t*beam.cos_g() > 0)
+               || (d1() < d2() && beam.z() - t*beam.cos_g() < length())) {
+            t *= 2;
         }
-        p = Point(beam.x() - q_t_corrected*beam.cos_a(), beam.y() - q_t_corrected*beam.cos_b(), beam.z() - q_t_corrected*beam.cos_g());
+        p = Point(beam.x() - t*beam.cos_a(), beam.y() - t*beam.cos_b(), beam.z() - t*beam.cos_g());
     }
     return p;
 }

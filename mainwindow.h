@@ -10,6 +10,7 @@
 #include <QDoubleSpinBox>
 #include <QGraphicsView>
 #include <QGraphicsLineItem>
+#include <QRandomGenerator>
 #include "geometry.h"
 
 QT_BEGIN_NAMESPACE
@@ -52,8 +53,9 @@ private:
 
     enum Mode {
         SINGLE_BEAM_CALCULATION,
-        SAMPLING_WITH_GIVEN_ANGLE,
-        SAMPLING_WITH_GIVEN_POSITION,
+        PARALLEL_BUNDLE,
+        DIVERGENT_BUNDLE,
+        EXHAUSTIVE_SAMPLING,
         MONTE_CARLO_METHOD
     };
 
@@ -64,7 +66,10 @@ private:
     void draw(const Point& p, bool has_passed, int rotation_angle);
     void init();
     void calculate_single_beam_path();
-    void calculate_beams_with_given_angle();
+    void calculate_parallel_beams();
+    QPair<int, int> calculate_divergent_beams();
+    void calculate_every_beam();
+    void monte_carlo_method();
     //    QGraphicsTextItem * result;
 };
 #endif // MAINWINDOW_H

@@ -15,6 +15,7 @@ public:
     qreal y() const { return y_; }
     qreal z() const { return z_; }
     Point x_pair() const { return Point(-x_, y_, z_);};
+    bool operator==(const Point& p) { return x() == p.x() && y() == p.y() && z() == p.z(); }
 };
 
 class Beam {
@@ -50,12 +51,6 @@ public:
 class Tube {
 private:
     qreal diameter_in, length_;
-    virtual qreal q_a(const Beam& beam) const;
-    virtual qreal q_b(const Beam& beam) const;
-    virtual qreal q_c(const Beam& beam) const;
-    qreal q_d(const Beam& beam) const;
-protected:
-    qreal q_t(const Beam& beam) const;
 
 public:
     Tube(qreal D1 = 25, qreal l = 50);
@@ -73,9 +68,7 @@ class Cone : public Tube {
 private:
     qreal diameter_out;
     qreal z_k() const { return r1()/tan_phi(); }
-    virtual qreal q_a(const Beam& beam) const override;
-    virtual qreal q_b(const Beam& beam) const override;
-    virtual qreal q_c(const Beam& beam) const override;
+
 public:
     Cone(qreal D1, qreal D2, qreal l);
     ~Cone() = default;
