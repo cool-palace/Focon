@@ -237,10 +237,11 @@ bool MainWindow::calculate_single_beam_path() {
     points.push_back(start);
     do {
         // Perpendicular beams cause infinite loop in tubes
-        if (cone->r1() == cone->r2() && fabs(ui->angle->value()) == 90) {
+        if (cone->r1() == cone->r2() && fabs(beam.d_y()) == 1) {
             ui->statusbar->showMessage("Некорректный входной угол");
-            break;
+            return false;
         }
+
         intersection = cone->intersection(beam);
 //      qDebug() << "(пересечение " << points.size()  << ")" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
 

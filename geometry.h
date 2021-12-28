@@ -6,11 +6,11 @@
 #include <QTextStream>
 
 class Point {
-public:
+private:
     qreal x_, y_, z_;
+public:
     Point(qreal x, qreal y, qreal z) : x_(x), y_(y), z_(z) {}
     Point() : x_(0), y_(0), z_(0) {};
-
     qreal x() const { return x_; }
     qreal y() const { return y_; }
     qreal z() const { return z_; }
@@ -78,6 +78,7 @@ public:
     qreal tan_phi() const  { return (d1() - d2())/(2*length()); }
     virtual qreal phi() const override { return qAtan(tan_phi()); }
     virtual Point intersection(const Beam& beam) const override;
+    Point vertex() const { return Point(0, 0, z_k()); }
 };
 
 class Matrix {

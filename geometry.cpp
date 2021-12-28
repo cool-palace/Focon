@@ -61,11 +61,15 @@ Point Cone::intersection(const Beam& beam) const {
     qreal t = (-b + qSqrt(d)) / (2*a);
     Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
 
+    if (r1() < r2() && p == vertex()) {
+        // Beam(Point(0,0,0), 0) intersects cone's vertex which is below zero in reverse cones
+        return Point(p.x(), p.y(), -p.z());
+    }
+
 //    qDebug() << qSqrt(p.x()*p.x() + p.y()*p.y()) << ' ' << (z_k() - p.z())*tan_phi();
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
     if (!correct_root) {
-        // False root means that
-        // the beam goes outward without intersecting the cone's surface
+        // False root means that the beam goes outward without intersecting the cone's surface
         // (the intersection point is located on the imaginary side).
         // So the resulting point does not have to belong to the cone's surface
         // But it has to be located outside of the cone so that no false beams appear from it and the calculations stop.
