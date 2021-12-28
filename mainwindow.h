@@ -50,6 +50,7 @@ private:
     QVector<QGraphicsLineItem *> beams;
     QVector<QGraphicsLineItem *> beams_xoy;
     QVector<Point> points;
+    QVector<bool> beam_has_passed;
 
     enum Mode {
         SINGLE_BEAM_CALCULATION,
@@ -65,7 +66,7 @@ private:
     void draw(int rotation_angle);
     void draw(const Point& p, bool has_passed, int rotation_angle);
     void init();
-    void calculate_single_beam_path();
+    bool calculate_single_beam_path();
     void calculate_parallel_beams();
     QPair<int, int> calculate_divergent_beams();
     void calculate_every_beam();
