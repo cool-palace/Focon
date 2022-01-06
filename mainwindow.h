@@ -11,6 +11,10 @@
 #include <QGraphicsView>
 #include <QGraphicsLineItem>
 #include <QRandomGenerator>
+#include <QFileDialog>
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #include "geometry.h"
 
 QT_BEGIN_NAMESPACE
@@ -28,6 +32,10 @@ public:
 public slots:
     void rotate(int rotation_angle);
     void build();
+
+private slots:
+    void save_settings();
+    void load_settings();
 
 private:
     Ui::MainWindow *ui;
@@ -71,6 +79,7 @@ private:
     QPair<int, int> calculate_divergent_beams();
     void calculate_every_beam();
     void monte_carlo_method();
+    void show_results(int, int);
     //    QGraphicsTextItem * result;
 };
 #endif // MAINWINDOW_H

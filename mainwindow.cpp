@@ -18,7 +18,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 {
     ui->setupUi(this);
-    connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int mode) {
+
+    connect(ui->load, SIGNAL(triggered(bool)), this, SLOT(load_settings()));
+    connect(ui->save, SIGNAL(triggered(bool)), this, SLOT(save_settings()));
+
+    connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [&](int mode) {
         clear();
         switch (mode) {
         case PARALLEL_BUNDLE: case EXHAUSTIVE_SAMPLING: case MONTE_CARLO_METHOD:
@@ -39,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->offset->setMaximum(ui->d_in->value()/2);
     ui->offset->setMinimum(-ui->d_in->value()/2);
 
-    connect(ui->d_in, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [=](qreal new_diameter) {
+    connect(ui->d_in, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal new_diameter) {
         ui->height->setMaximum(new_diameter/2);
         ui->height->setMinimum(-new_diameter/2);
         ui->offset->setMaximum(new_diameter/2);
@@ -230,6 +234,51 @@ void MainWindow::build() {
     }
 }
 
+void MainWindow::save_settings() {
+    QJsonObject json_file = { {"D1", ui->d_in->value()},
+                              {"D2", ui->d_out->value()},
+                              {"Length", ui->length->value()},
+                              {"Angle", ui->angle->value()},
+                              {"X offset", ui->offset->value()},
+                              {"Y offset", ui->height->value()},
+                              {"Mode", ui->mode->currentIndex()},
+                              {"Rotation", ui->rotation->value()}
+                            };
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                               "untitled.foc",
+                               tr("Focon settings files (*.foc)"));
+    QFile file(fileName);
+    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream out(&file);
+        out << QJsonDocument(json_file).toJson();
+        file.close();
+    }
+    ui->statusbar->showMessage("Настройки сохранены");
+}
+
+void MainWindow::load_settings() {
+    QString filepath = QFileDialog::getOpenFileName(nullptr, "Open a settings file", "", "Focon settings files (*.foc)");
+    QFile file;
+    file.setFileName(filepath);
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    QString val = file.readAll();
+    file.close();
+
+    QJsonDocument doc = QJsonDocument::fromJson(val.toUtf8());
+    QJsonObject json_file = doc.object();
+
+    ui->d_in->setValue(json_file.value("D1").toDouble());
+    ui->d_out->setValue(json_file.value("D2").toDouble());
+    ui->length->setValue(json_file.value("Length").toDouble());
+    ui->angle->setValue(json_file.value("Angle").toDouble());
+    ui->offset->setValue(json_file.value("X offset").toDouble());
+    ui->height->setValue(json_file.value("Y offset").toDouble());
+    ui->rotation->setValue(json_file.value("Rotation").toDouble());
+    ui->mode->setCurrentIndex(json_file.value("Mode").toInt());
+
+    ui->statusbar->showMessage("Настройки загружены");
+}
+
 bool MainWindow::calculate_single_beam_path() {
     points.push_back(start);
     do {
@@ -298,8 +347,7 @@ void MainWindow::calculate_parallel_beams() {
             }
         }
     }
-    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
-                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
+    show_results(beams_passed, beams_total);
 }
 
 QPair<int, int> MainWindow::calculate_divergent_beams() {
@@ -318,8 +366,7 @@ QPair<int, int> MainWindow::calculate_divergent_beams() {
         }
         draw(points.back(), has_passed, ui->rotation->value());
     }
-    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
-                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
+    show_results(beams_passed, beams_total);
     return qMakePair(beams_passed, beams_total);
 }
 
@@ -340,8 +387,7 @@ void MainWindow::calculate_every_beam() {
             }
         }
     }
-    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
-                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
+    show_results(beams_passed, beams_total);
 }
 
 void MainWindow::monte_carlo_method() {
@@ -362,6 +408,22 @@ void MainWindow::monte_carlo_method() {
             }
         } else --i;
     }
-    ui->statusbar->showMessage("Прошло " + QString().setNum(beams_passed) + " лучей из " + QString().setNum(beams_total)
+    show_results(beams_passed, beams_total);
+}
+
+void MainWindow::show_results(int beams_passed, int beams_total) {
+    QString passed = "Прошло ";
+    QString beams_of = " лучей из ";
+
+    if ((beams_passed % 100 - beams_passed % 10) != 10) {
+        if (beams_passed % 10 == 1) {
+            passed = "Прошёл ";
+            beams_of = " луч из ";
+        } else if (beams_passed % 10 > 1 && beams_passed % 10 < 5) {
+            beams_of = " луча из ";
+        }
+    }
+
+    ui->statusbar->showMessage(passed + QString().setNum(beams_passed) + beams_of + QString().setNum(beams_total)
                                + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
 }
