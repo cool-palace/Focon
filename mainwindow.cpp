@@ -24,16 +24,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [&](int mode) {
         clear();
+
+        ui->rotation->setEnabled(false);
+
         switch (mode) {
         case PARALLEL_BUNDLE: case EXHAUSTIVE_SAMPLING: case MONTE_CARLO_METHOD:
             ui->height->setEnabled(false);
             ui->offset->setEnabled(false);
-            ui->rotation->setEnabled(mode == PARALLEL_BUNDLE);
             break;
         default:
             ui->height->setEnabled(true);
             ui->offset->setEnabled(true);
-            ui->rotation->setEnabled(true);
             break;
         }
     });
@@ -208,6 +209,7 @@ void MainWindow::build() {
     points.clear();
     beam_has_passed.clear();
     init();
+    ui->rotation->setEnabled(ui->mode->currentIndex() < EXHAUSTIVE_SAMPLING);
 
     switch (ui->mode->currentIndex()) {
     case SINGLE_BEAM_CALCULATION:
@@ -247,13 +249,15 @@ void MainWindow::save_settings() {
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
                                "untitled.foc",
                                tr("Focon settings files (*.foc)"));
-    QFile file(fileName);
-    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
-        QTextStream out(&file);
-        out << QJsonDocument(json_file).toJson();
-        file.close();
+    if (!fileName.isNull()) {
+        QFile file(fileName);
+        if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+            QTextStream out(&file);
+            out << QJsonDocument(json_file).toJson();
+            file.close();
+        }
+        ui->statusbar->showMessage("Настройки сохранены");
     }
-    ui->statusbar->showMessage("Настройки сохранены");
 }
 
 void MainWindow::load_settings() {
@@ -395,6 +399,9 @@ void MainWindow::monte_carlo_method() {
     int beams_passed = 0;
     int count = 100000;
     QRandomGenerator rng;
+//    QElapsedTimer timer;
+//    timer.start();
+//    QVector<QFuture<bool>> handlers;
     for (int i = 0; i < count; ++i) {
         qreal x = 2 * rng.generateDouble() - 1;
         qreal y = 2 * rng.generateDouble() - 1;
@@ -402,12 +409,18 @@ void MainWindow::monte_carlo_method() {
         if (x*x + y*y < cone->r1()*cone->r1()) {
             beam = Beam(start, (2 * rng.generateDouble() - 1) * fabs(ui->angle->value()));
             ++beams_total;
+//            handlers.append(QtConcurrent::run(this, &MainWindow::calculate_single_beam_path));
+//            bool has_passed = handlers.back().result();
             bool has_passed = calculate_single_beam_path();
             if (has_passed) {
                 ++beams_passed;
             }
         } else --i;
     }
+//    for (auto &f : handlers) {
+//        f.waitForFinished();
+//    }
+//    qDebug() << timer.elapsed();
     show_results(beams_passed, beams_total);
 }
 

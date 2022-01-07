@@ -14,7 +14,6 @@
 #include <QFileDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
-
 #include "geometry.h"
 
 QT_BEGIN_NAMESPACE

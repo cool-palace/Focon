@@ -265,7 +265,7 @@
   </widget>
   <action name="load">
    <property name="text">
-    <string>Загрузить</string>
+    <string>Открыть</string>
    </property>
   </action>
   <action name="save">
@@ -276,22 +276,6 @@
  </widget>
  <resources/>
  <connections>
-  <connection>
-   <sender>calc</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>build()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>69</x>
-     <y>508</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>34</x>
-     <y>394</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>rotation</sender>
    <signal>valueChanged(int)</signal>
@@ -305,6 +289,22 @@
     <hint type="destinationlabel">
      <x>6</x>
      <y>338</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>calc</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>build()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>69</x>
+     <y>508</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>34</x>
+     <y>394</y>
     </hint>
    </hints>
   </connection>
