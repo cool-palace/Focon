@@ -16,6 +16,7 @@ public:
     qreal z() const { return z_; }
     Point x_pair() const { return Point(-x_, y_, z_);};
     bool operator==(const Point& p) { return x() == p.x() && y() == p.y() && z() == p.z(); }
+    bool is_in_radius(qreal radius) const { return x()*x() + y()*y() < radius * radius; }
 };
 
 class Beam {
@@ -24,7 +25,8 @@ private:
     qreal dx, dy, dz;
 public:
     Beam() : p(Point()), dx(0), dy(0), dz(0) {};
-    Beam(Point p, qreal angle) : p(p), dx(0), dy(qSin(qDegreesToRadians(-angle))), dz(qCos(qDegreesToRadians(-angle))) {}
+    Beam(Point p, qreal angle)
+        : p(p), dx(0), dy(qSin(qDegreesToRadians(-angle))), dz(qCos(qDegreesToRadians(-angle))) {}
     Beam(Point p, qreal dx, qreal dy, qreal dz) : p(p), dx(dx), dy(dy), dz(dz) {}
 
     qreal length() const { return sqrt(dx*dx + dy*dy + dz*dz); }
@@ -32,6 +34,8 @@ public:
     qreal cos_a() const { return dx/length(); }
     qreal cos_b() const { return dy/length(); }
     qreal cos_g() const { return dz/length(); }
+
+    qreal gamma() const { return qRadiansToDegrees(qAcos(cos_g())); }
 
     qreal d_x() const { return dx; }
     qreal d_y() const { return dy; }
@@ -88,6 +92,26 @@ public:
     Matrix(qreal ksi, qreal phi);
     Matrix transponed();
     Beam operator* (const Beam& b);
+};
+
+class Detector {
+private:
+    qreal field_of_view;
+    qreal diameter;
+    qreal z_position;
+
+public:
+    Detector() = default;
+    Detector(qreal fov, qreal diameter, qreal z)
+        : field_of_view(fov), diameter(diameter), z_position(z) {};
+    qreal fov() const { return field_of_view; }
+    qreal r() const { return diameter/2; }
+    qreal z() const { return z_position; }
+
+    Point intersection(const Beam& beam) const;
+    bool hit(const Beam& beam) { return intersection(beam).is_in_radius(r()); }
+    bool missed(const Beam& beam) { return !hit(beam); }
+    bool detected(const Beam& beam) { return hit(beam) && beam.gamma() < fov(); }
 };
 
 #endif // GEOMETRY_H
