@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>900</width>
-    <height>661</height>
+    <height>708</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -82,7 +82,7 @@
               </sizepolicy>
              </property>
              <property name="minimum">
-              <double>1.000000000000000</double>
+              <double>0.500000000000000</double>
              </property>
              <property name="maximum">
               <double>100.000000000000000</double>
@@ -361,7 +361,14 @@
     <addaction name="load"/>
     <addaction name="save"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>Изображение</string>
+    </property>
+    <addaction name="save_image"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menu_2"/>
   </widget>
   <action name="load">
    <property name="text">
@@ -369,6 +376,11 @@
    </property>
   </action>
   <action name="save">
+   <property name="text">
+    <string>Сохранить</string>
+   </property>
+  </action>
+  <action name="save_image">
    <property name="text">
     <string>Сохранить</string>
    </property>

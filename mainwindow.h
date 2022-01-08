@@ -35,6 +35,7 @@ public slots:
 private slots:
     void save_settings();
     void load_settings();
+    void save_image();
 
 private:
     Ui::MainWindow *ui;

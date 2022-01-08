@@ -32,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->load, SIGNAL(triggered(bool)), this, SLOT(load_settings()));
     connect(ui->save, SIGNAL(triggered(bool)), this, SLOT(save_settings()));
+    connect(ui->save_image, SIGNAL(triggered(bool)), this, SLOT(save_image()));
 
     connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [&](int mode) {
         clear();
@@ -326,9 +327,9 @@ void MainWindow::save_settings() {
                               {"Mode", ui->mode->currentIndex()},
                               {"Rotation", ui->rotation->value()}
                             };
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
-                               "untitled.foc",
-                               tr("Focon settings files (*.foc)"));
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save file"),
+                                                    QCoreApplication::applicationDirPath() + "//untitled.foc",
+                                                    tr("Focon settings files (*.foc)"));
     if (!fileName.isNull()) {
         QFile file(fileName);
         if (file.open(QFile::WriteOnly | QFile::Truncate)) {
@@ -341,7 +342,9 @@ void MainWindow::save_settings() {
 }
 
 void MainWindow::load_settings() {
-    QString filepath = QFileDialog::getOpenFileName(nullptr, "Open a settings file", "", "Focon settings files (*.foc)");
+    QString filepath = QFileDialog::getOpenFileName(nullptr, "Open a settings file",
+                                                    QCoreApplication::applicationDirPath(),
+                                                    "Focon settings files (*.foc)");
     QFile file;
     file.setFileName(filepath);
     file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -363,6 +366,17 @@ void MainWindow::load_settings() {
     ui->mode->setCurrentIndex(json_file.value("Mode").toInt());
 
     ui->statusbar->showMessage("Настройки загружены");
+}
+
+void MainWindow::save_image() {
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save image"),
+                                                    QCoreApplication::applicationDirPath(),
+                                                    tr("PNG image (*.png)"));
+    if (!fileName.isNull()) {
+        QPixmap pixMap = ui->view->grab();
+        pixMap.save(fileName);
+        ui->statusbar->showMessage("Изображение сохранено: " + fileName);
+    }
 }
 
 MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
@@ -422,7 +436,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
 void MainWindow::calculate_parallel_beams() {
     int beams_total = 0;
     int beams_passed = 0;
-    int count = 30;
+    int count = 50;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
         for (int j = -count; j < count; ++j) {
