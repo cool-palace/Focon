@@ -4,6 +4,8 @@
 #include <QResizeEvent>
 
 constexpr qreal diameter = 150;
+constexpr qreal margin = 10;
+constexpr QPointF y_axis_label_offset = QPointF(-10,-5);
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,11 +13,19 @@ MainWindow::MainWindow(QWidget *parent)
     , scene(new QGraphicsScene())
     , y_axis(new QGraphicsLineItem())
     , z_axis(new QGraphicsLineItem())
+    , x_axis_xoy(new QGraphicsLineItem())
+    , y_axis_xoy(new QGraphicsLineItem())
     , focon_up(new QGraphicsLineItem())
     , focon_down(new QGraphicsLineItem())
     , detector_yoz(new QGraphicsLineItem())
     , circle(new QGraphicsEllipseItem())
     , circle_out(new QGraphicsEllipseItem())
+    , x_label_xoy(new QGraphicsSimpleTextItem("x"))
+    , y_label_xoy(new QGraphicsSimpleTextItem("y"))
+    , y_label_yoz(new QGraphicsSimpleTextItem("y"))
+    , z_label_yoz(new QGraphicsSimpleTextItem("z"))
+    , origin_label_xoy(new QGraphicsSimpleTextItem("0"))
+    , origin_label_yoz(new QGraphicsSimpleTextItem("0"))
 
 {
     ui->setupUi(this);
@@ -56,16 +66,52 @@ MainWindow::MainWindow(QWidget *parent)
     scene->setSceneRect(0,0,ui->view->width(), ui->view->height());
     init();
 
+    qreal x_axis_pos = scene->height()/2;
+
+    // setting axes' projections
+    y_axis->setLine(0, 0, 0, x_axis_pos*2);
+    x_axis_xoy->setLine(circle->rect().x() - margin, diameter/2 + margin, circle->rect().x() + diameter + margin, diameter/2 + margin);
+    y_axis_xoy->setLine(circle->rect().x()+diameter/2, 0, circle->rect().x() + diameter/2, diameter + 2*margin);
+    x_axis_xoy->setTransformOriginPoint(x_axis_xoy->line().center());
+    y_axis_xoy->setTransformOriginPoint(y_axis_xoy->line().center());
+
+    // setting axes' labels
+    x_label_xoy->setPos(x_axis_xoy->line().p2());
+    y_label_xoy->setPos(y_axis_xoy->line().p1() + y_axis_label_offset);
+    y_label_yoz->setPos(y_axis->line().p1() + y_axis_label_offset);
+    z_label_yoz->setPos(z_axis->line().p2());
+    x_label_xoy->setTransformOriginPoint(x_axis_xoy->line().center() - x_label_xoy->pos());
+    y_label_xoy->setTransformOriginPoint(y_axis_xoy->line().center() - y_label_xoy->pos());
+
+    // setting font
+    auto font = QFont("Calibri",10);
+    x_label_xoy->setFont(font);
+    y_label_xoy->setFont(font);
+    y_label_yoz->setFont(font);
+    z_label_yoz->setFont(font);
+    origin_label_xoy->setFont(font);
+    origin_label_yoz->setFont(font);
+
 //    //result = new QGraphicsTextItem();
     y_axis->setPen(QPen(Qt::DashDotLine));
     z_axis->setPen(QPen(Qt::DashDotLine));
+    x_axis_xoy->setPen(QPen(Qt::DashDotLine));
+    y_axis_xoy->setPen(QPen(Qt::DashDotLine));
     scene->addItem(y_axis);
     scene->addItem(z_axis);
+    scene->addItem(x_axis_xoy);
+    scene->addItem(y_axis_xoy);
     scene->addItem(focon_up);
     scene->addItem(focon_down);
     scene->addItem(detector_yoz);
     scene->addItem(circle);
     scene->addItem(circle_out);
+    scene->addItem(x_label_xoy);
+    scene->addItem(y_label_xoy);
+    scene->addItem(y_label_yoz);
+    scene->addItem(z_label_yoz);
+    scene->addItem(origin_label_xoy);
+    scene->addItem(origin_label_yoz);
 }
 
 MainWindow::~MainWindow()
@@ -98,8 +144,8 @@ void MainWindow::init() {
     qreal diameter_outer = qMin(ui->d_out->value(),ui->d_in->value()) * scale_xoy;
     qreal circle_out_x = scene->width() - diameter/2 - diameter_outer/2;
     qreal circle_out_y = diameter/2 - diameter_outer/2;
-    circle_out->setRect(circle_out_x,circle_out_y, diameter_outer, diameter_outer);
-    circle->setRect(scene->width()-diameter, 0, diameter, diameter);
+    circle_out->setRect(circle_out_x, circle_out_y + margin, diameter_outer, diameter_outer);
+    circle->setRect(scene->width()-diameter, margin, diameter, diameter);
 
     // updating geometrical objects
     start = Point(-ui->offset->value(), -ui->height->value(), 0);
@@ -110,12 +156,13 @@ void MainWindow::init() {
     beam = Beam(start, ui->angle->value());
     detector = Detector(ui->fov->value(), ui->d_det->value(), ui->length->value());
 
-    // updating axes', cone's and detector's yoz projections
-    y_axis->setLine(0,0,0,x_axis_pos*2);
-    z_axis->setLine(0,x_axis_pos,x_axis_length,x_axis_pos);
+    // updating z axis' projection and origin points
+    z_axis->setLine(-margin, x_axis_pos, x_axis_length + margin, x_axis_pos);
+    origin_label_xoy->setPos(circle->rect().center() + QPointF(-10,0));
+    origin_label_yoz->setPos(z_axis->line().p1());
 
+    // updating cone's and detector's yoz projections
     qreal z_end = ui->length->value() * scale;
-
     focon_up->setLine(0, x_axis_pos - cone->r1() * scale, z_end, x_axis_pos - cone->r2() * scale);
     focon_down->setLine(0, x_axis_pos + cone->r1() * scale, z_end, x_axis_pos + cone->r2() * scale);
     detector_yoz->setLine(z_end, x_axis_pos + detector.r() * scale, z_end, x_axis_pos - detector.r() * scale);
@@ -142,15 +189,17 @@ void MainWindow::draw(int rotation_angle) {
         scene->addItem(beams.back());
 
         QLineF line_xoy = QLineF(-(points[i].x()*qCos(theta) + points[i].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                                 -(points[i].x()*qSin(theta) - points[i].y()*qCos(theta))*scale_xoy + diameter/2,
+                                 -(points[i].x()*qSin(theta) - points[i].y()*qCos(theta))*scale_xoy + diameter/2 + margin,
                                  -(points[i+1].x()*qCos(theta) + points[i+1].y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                                 -(points[i+1].x()*qSin(theta) - points[i+1].y()*qCos(theta))*scale_xoy + diameter/2);
+                                 -(points[i+1].x()*qSin(theta) - points[i+1].y()*qCos(theta))*scale_xoy + diameter/2 + margin);
         beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
         scene->addItem(beams_xoy.back());
 
         set_beam_color(beams[i], single_beam_status);
         set_beam_color(beams_xoy[i], single_beam_status);
     }
+    draw_axes(rotation_angle);
+    draw_axes(theta);
 }
 
 void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle) {
@@ -158,9 +207,9 @@ void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle)
     switch (ui->mode->currentIndex()) {
         case PARALLEL_BUNDLE: {
             QLineF line_xoy = QLineF(-(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                                     -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2,
+                                     -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2 + margin,
                                      -(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_xoy + scene->width() - diameter/2,
-                                     -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2);
+                                     -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2 + margin);
             beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
             scene->addItem(beams_xoy.back());
 
@@ -175,6 +224,21 @@ void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle)
             set_beam_color(beams.back(), status);
         } break;
     }
+    draw_axes(rotation_angle);
+    draw_axes(theta);
+}
+
+void MainWindow::draw_axes(int rotation_angle) {
+    x_axis_xoy->setRotation(rotation_angle);
+    y_axis_xoy->setRotation(rotation_angle);
+    x_label_xoy->setRotation(rotation_angle);
+    y_label_xoy->setRotation(rotation_angle);
+}
+
+void MainWindow::draw_axes(qreal theta) {
+    qreal x_axis_pos = scene->height()/2;
+    y_axis->setLine(0,x_axis_pos-x_axis_pos*qCos(theta),0,x_axis_pos+x_axis_pos*qCos(theta));
+    y_label_yoz->setPos(y_axis->line().p1() + y_axis_label_offset);
 }
 
 void MainWindow::set_beam_color(QGraphicsLineItem * beam, BeamStatus status) {
@@ -309,9 +373,8 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
         return REFLECTED;
     }
 
-    do {
+    while(true) {
         intersection = cone->intersection(beam);
-//      qDebug() << "(пересечение " << points.size()  << ")" << i_point.x() << ' ' << i_point.y() << ' ' << i_point.z();
 
         switch (ui->mode->currentIndex()) {
         case SINGLE_BEAM_CALCULATION:
@@ -329,19 +392,18 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
             break;
         }
 
+        // Transforming the beam after hitting a point outside of the cone is not necessary
         if (intersection.z() < 0 || intersection.z() > cone->length()) break;
 
         QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
-//      qDebug() << line.angle();
         qreal ksi = qDegreesToRadians(-90 + line.angle());
         qreal phi = cone->phi();
-//      qDebug() << "углы " << qRadiansToDegrees(ksi) << ' ' << qRadiansToDegrees(phi);
         Matrix m = Matrix(ksi, phi);
 
         Beam transformed_beam = m*beam.unit(intersection);
         transformed_beam.reflect();
         beam = m.transponed()*transformed_beam;
-    } while (intersection.z() > 0 && intersection.z() < cone->length());
+    }
 
 
     BeamStatus status;
@@ -360,7 +422,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
 void MainWindow::calculate_parallel_beams() {
     int beams_total = 0;
     int beams_passed = 0;
-    int count = 20;
+    int count = 30;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
         for (int j = -count; j < count; ++j) {
@@ -447,12 +509,12 @@ void MainWindow::monte_carlo_method() {
 }
 
 void MainWindow::show_results(int beams_passed, int beams_total) {
-    QString passed = "Прошло ";
+    QString passed = "Принято ";
     QString beams_of = " лучей из ";
 
     if ((beams_passed % 100 - beams_passed % 10) != 10) {
         if (beams_passed % 10 == 1) {
-            passed = "Прошёл ";
+            passed = "Принят ";
             beams_of = " луч из ";
         } else if (beams_passed % 10 > 1 && beams_passed % 10 < 5) {
             beams_of = " луча из ";

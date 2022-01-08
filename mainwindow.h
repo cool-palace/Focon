@@ -58,11 +58,20 @@ private:
     QGraphicsScene* scene;
     QGraphicsLineItem * y_axis;
     QGraphicsLineItem * z_axis;
+    QGraphicsLineItem * x_axis_xoy;
+    QGraphicsLineItem * y_axis_xoy;
     QGraphicsLineItem * focon_up;
     QGraphicsLineItem * focon_down;
     QGraphicsLineItem * detector_yoz;
     QGraphicsEllipseItem * circle;
     QGraphicsEllipseItem * circle_out;
+
+    QGraphicsSimpleTextItem * x_label_xoy;
+    QGraphicsSimpleTextItem * y_label_xoy;
+    QGraphicsSimpleTextItem * y_label_yoz;
+    QGraphicsSimpleTextItem * z_label_yoz;
+    QGraphicsSimpleTextItem * origin_label_xoy;
+    QGraphicsSimpleTextItem * origin_label_yoz;
 
     QVector<QGraphicsLineItem *> beams;
     QVector<QGraphicsLineItem *> beams_xoy;
@@ -82,6 +91,8 @@ private:
     void clear();
     void draw(int rotation_angle);
     void draw(const Point& p, BeamStatus status, int rotation_angle);
+    void draw_axes(int rotation_angle);
+    void draw_axes(qreal theta);
     void set_beam_color(QGraphicsLineItem * beam, BeamStatus status);
     void init();
     BeamStatus calculate_single_beam_path();
