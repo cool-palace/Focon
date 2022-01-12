@@ -487,14 +487,15 @@ void MainWindow::calculate_every_beam() {
     int count = 20;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
-        for (int j = -count; j < count; ++j) {
+        for (int j = 0; j < count; ++j) {
             qreal y = j * cone->r1() / count;
             start = Point(-x, -y, 0);
             if (start.is_in_radius(cone->r1())) {
                 QPair<int, int> current_result = calculate_divergent_beams();
                 // The results are simmetrical relative to y axis, hence doubling total count for i > 0
-                beams_passed += (i > 0 ? 2 : 1) * current_result.first;
-                beams_total += (i > 0 ? 2 : 1) * current_result.second;
+                // The results are also simmetrical relative to x axis due to divergent beam calculation method used
+                beams_passed += (i > 0 ? 2 : 1) * (j > 0 ? 2 : 1) * current_result.first;
+                beams_total += (i > 0 ? 2 : 1) * (j > 0 ? 2 : 1) * current_result.second;
             }
         }
     }
