@@ -36,6 +36,7 @@ private slots:
     void save_settings();
     void load_settings();
     void save_image();
+    void set_colors(bool night_theme_on);
 
 private:
     Ui::MainWindow *ui;
@@ -69,12 +70,12 @@ private:
     QGraphicsEllipseItem * circle;
     QGraphicsEllipseItem * circle_out;
 
-    QGraphicsSimpleTextItem * x_label_xoy;
-    QGraphicsSimpleTextItem * y_label_xoy;
-    QGraphicsSimpleTextItem * y_label_yoz;
-    QGraphicsSimpleTextItem * z_label_yoz;
-    QGraphicsSimpleTextItem * origin_label_xoy;
-    QGraphicsSimpleTextItem * origin_label_yoz;
+    QGraphicsTextItem * x_label_xoy;
+    QGraphicsTextItem * y_label_xoy;
+    QGraphicsTextItem * y_label_yoz;
+    QGraphicsTextItem * z_label_yoz;
+    QGraphicsTextItem * origin_label_xoy;
+    QGraphicsTextItem * origin_label_yoz;
 
     QVector<QGraphicsLineItem *> beams;
     QVector<QGraphicsLineItem *> beams_xoy;

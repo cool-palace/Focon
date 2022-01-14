@@ -5,7 +5,8 @@
 
 constexpr qreal diameter = 150;
 constexpr qreal margin = 10;
-constexpr QPointF y_axis_label_offset = QPointF(-10,-5);
+constexpr QPointF y_axis_label_offset = QPointF(-15,-10);
+constexpr QPointF x_axis_label_offset = QPointF(-5,-5);
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -22,12 +23,12 @@ MainWindow::MainWindow(QWidget *parent)
     , window_down(new QGraphicsLineItem())
     , circle(new QGraphicsEllipseItem())
     , circle_out(new QGraphicsEllipseItem())
-    , x_label_xoy(new QGraphicsSimpleTextItem("x"))
-    , y_label_xoy(new QGraphicsSimpleTextItem("y"))
-    , y_label_yoz(new QGraphicsSimpleTextItem("y"))
-    , z_label_yoz(new QGraphicsSimpleTextItem("z"))
-    , origin_label_xoy(new QGraphicsSimpleTextItem("0"))
-    , origin_label_yoz(new QGraphicsSimpleTextItem("0"))
+    , x_label_xoy(new QGraphicsTextItem("x"))
+    , y_label_xoy(new QGraphicsTextItem("y"))
+    , y_label_yoz(new QGraphicsTextItem("y"))
+    , z_label_yoz(new QGraphicsTextItem("z"))
+    , origin_label_xoy(new QGraphicsTextItem("0"))
+    , origin_label_yoz(new QGraphicsTextItem("0"))
 
 {
     ui->setupUi(this);
@@ -35,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->load, SIGNAL(triggered(bool)), this, SLOT(load_settings()));
     connect(ui->save, SIGNAL(triggered(bool)), this, SLOT(save_settings()));
     connect(ui->save_image, SIGNAL(triggered(bool)), this, SLOT(save_image()));
+    connect(ui->night_mode, SIGNAL(toggled(bool)), this, SLOT(set_colors(bool)));
 
     connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [&](int mode) {
         clear();
@@ -77,12 +79,13 @@ MainWindow::MainWindow(QWidget *parent)
     y_axis_xoy->setLine(circle->rect().x()+diameter/2, 0, circle->rect().x() + diameter/2, diameter + 2*margin);
     x_axis_xoy->setTransformOriginPoint(x_axis_xoy->line().center());
     y_axis_xoy->setTransformOriginPoint(y_axis_xoy->line().center());
+    x_axis_xoy->setPen(QColor(Qt::white));
 
     // setting axes' labels
-    x_label_xoy->setPos(x_axis_xoy->line().p2());
+    x_label_xoy->setPos(x_axis_xoy->line().p2() + x_axis_label_offset);
     y_label_xoy->setPos(y_axis_xoy->line().p1() + y_axis_label_offset);
     y_label_yoz->setPos(y_axis->line().p1() + y_axis_label_offset);
-    z_label_yoz->setPos(z_axis->line().p2());
+    z_label_yoz->setPos(z_axis->line().p2() + x_axis_label_offset);
     x_label_xoy->setTransformOriginPoint(x_axis_xoy->line().center() - x_label_xoy->pos());
     y_label_xoy->setTransformOriginPoint(y_axis_xoy->line().center() - y_label_xoy->pos());
 
@@ -95,10 +98,8 @@ MainWindow::MainWindow(QWidget *parent)
     origin_label_xoy->setFont(font);
     origin_label_yoz->setFont(font);
 
-    y_axis->setPen(QPen(Qt::DashDotLine));
-    z_axis->setPen(QPen(Qt::DashDotLine));
-    x_axis_xoy->setPen(QPen(Qt::DashDotLine));
-    y_axis_xoy->setPen(QPen(Qt::DashDotLine));
+    set_colors(ui->night_mode->isChecked());
+
     scene->addItem(y_axis);
     scene->addItem(z_axis);
     scene->addItem(x_axis_xoy);
@@ -163,8 +164,8 @@ void MainWindow::init() {
 
     // updating z axis' projection and origin points
     z_axis->setLine(-margin, x_axis_pos, x_axis_length + margin, x_axis_pos);
-    origin_label_xoy->setPos(circle->rect().center() + QPointF(-10,0));
-    origin_label_yoz->setPos(z_axis->line().p1());
+    origin_label_xoy->setPos(circle->rect().center() + QPointF(-13,-5));
+    origin_label_yoz->setPos(z_axis->line().p1() + QPointF(-5,-2));
 
     // updating cone's and detector's yoz projections
     qreal z_end = ui->length->value() * scale;
@@ -173,6 +174,36 @@ void MainWindow::init() {
     window_up->setLine(z_end, x_axis_pos - cone->r2() * scale, z_end, x_axis_pos - detector.window_radius() * scale);
     window_down->setLine(z_end, x_axis_pos + cone->r2() * scale, z_end, x_axis_pos + detector.window_radius() * scale);
     detector_yoz->setLine(detector.detector_z() * scale, x_axis_pos + detector.r() * scale, detector.detector_z() * scale, x_axis_pos - detector.r() * scale);
+}
+
+void MainWindow::set_colors(bool night_theme_on) {
+    scene->setBackgroundBrush(QBrush(night_theme_on ? QColor(64,64,64) : Qt::white));
+
+    auto color = night_theme_on ? Qt::white : Qt::black;
+
+    QPen axis_pen(QBrush(color),1,Qt::DashDotLine);
+    y_axis->setPen(axis_pen);
+    z_axis->setPen(axis_pen);
+    x_axis_xoy->setPen(axis_pen);
+    y_axis_xoy->setPen(axis_pen);
+
+    QPen pen = QPen(color);
+    circle->setPen(pen);
+    circle_out->setPen(pen);
+    focon_up->setPen(pen);
+    focon_down->setPen(pen);
+    window_up->setPen(pen);
+    window_down->setPen(pen);
+    detector_yoz->setPen(pen);
+
+    x_label_xoy->setDefaultTextColor(color);
+    y_label_xoy->setDefaultTextColor(color);
+    y_label_yoz->setDefaultTextColor(color);
+    z_label_yoz->setDefaultTextColor(color);
+    x_label_xoy->setDefaultTextColor(color);
+    y_label_xoy->setDefaultTextColor(color);
+    origin_label_xoy->setDefaultTextColor(color);
+    origin_label_yoz->setDefaultTextColor(color);
 }
 
 void MainWindow::clear() {
@@ -322,12 +353,15 @@ void MainWindow::build() {
 }
 
 void MainWindow::save_settings() {
-    QJsonObject json_file = { {"D1", ui->d_in->value()},
+    QJsonObject json_file = {
+                              {"D1", ui->d_in->value()},
                               {"D2", ui->d_out->value()},
                               {"Length", ui->length->value()},
                               {"Angle", ui->angle->value()},
                               {"X offset", ui->offset->value()},
                               {"Y offset", ui->height->value()},
+                              {"Detector's window", ui->aperture->value()},
+                              {"Detector's offset", ui->offset_det->value()},
                               {"Detector's FOV", ui->fov->value()},
                               {"Detector's diameter", ui->d_det->value()},
                               {"Mode", ui->mode->currentIndex()},
@@ -335,7 +369,7 @@ void MainWindow::save_settings() {
                             };
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"),
                                                     QCoreApplication::applicationDirPath() + "//untitled.foc",
-                                                    tr("Файлы настроек фокона (*.foc)"));
+                                                    tr("Файлы настроек (*.foc)"));
     if (!fileName.isNull()) {
         QFile file(fileName);
         if (file.open(QFile::WriteOnly | QFile::Truncate)) {
@@ -350,7 +384,7 @@ void MainWindow::save_settings() {
 void MainWindow::load_settings() {
     QString filepath = QFileDialog::getOpenFileName(nullptr, "Открыть файл настроек",
                                                     QCoreApplication::applicationDirPath(),
-                                                    "Файлы настроек фокона (*.foc)");
+                                                    "Файлы настроек (*.foc)");
     QFile file;
     file.setFileName(filepath);
     file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -360,16 +394,42 @@ void MainWindow::load_settings() {
     QJsonDocument doc = QJsonDocument::fromJson(val.toUtf8());
     QJsonObject json_file = doc.object();
 
-    ui->d_in->setValue(json_file.value("D1").toDouble());
-    ui->d_out->setValue(json_file.value("D2").toDouble());
-    ui->length->setValue(json_file.value("Length").toDouble());
-    ui->angle->setValue(json_file.value("Angle").toDouble());
-    ui->offset->setValue(json_file.value("X offset").toDouble());
-    ui->height->setValue(json_file.value("Y offset").toDouble());
-    ui->fov->setValue(json_file.value("Detector's FOV").toDouble());
-    ui->d_det->setValue(json_file.value("Detector's diameter").toDouble());
-    ui->rotation->setValue(json_file.value("Rotation").toDouble());
-    ui->mode->setCurrentIndex(json_file.value("Mode").toInt());
+    if (json_file.contains("D1")) {
+        ui->d_in->setValue(json_file.value("D1").toDouble());
+    }
+    if (json_file.contains("D2")) {
+        ui->d_out->setValue(json_file.value("D2").toDouble());
+    }
+    if (json_file.contains("Length")) {
+        ui->length->setValue(json_file.value("Length").toDouble());
+    }
+    if (json_file.contains("Angle")) {
+        ui->angle->setValue(json_file.value("Angle").toDouble());
+    }
+    if (json_file.contains("X offset")) {
+        ui->offset->setValue(json_file.value("X offset").toDouble());
+    }
+    if (json_file.contains("Y offset")) {
+        ui->height->setValue(json_file.value("Y offset").toDouble());
+    }
+    if (json_file.contains("Detector's window")) {
+        ui->aperture->setValue(json_file.value("Detector's window").toDouble());
+    }
+    if (json_file.contains("Detector's offset")) {
+        ui->offset_det->setValue(json_file.value("Detector's offset").toDouble());
+    }
+    if (json_file.contains("Detector's FOV")) {
+        ui->fov->setValue(json_file.value("Detector's FOV").toDouble());
+    }
+    if (json_file.contains("Detector's diameter")) {
+        ui->d_det->setValue(json_file.value("Detector's diameter").toDouble());
+    }
+    if (json_file.contains("Rotation")) {
+        ui->rotation->setValue(json_file.value("Rotation").toInt());
+    }
+    if (json_file.contains("Mode")) {
+        ui->mode->setCurrentIndex(json_file.value("Mode").toInt());
+    }
 
     ui->statusbar->showMessage("Настройки загружены");
 }
@@ -470,7 +530,7 @@ QPair<int, int> MainWindow::calculate_divergent_beams() {
     int beams_total = 0;
     int beams_passed = 0;
     int count = 4;
-    int limit = abs(ui->angle->value()) * count;
+    int limit = abs(static_cast<int>(ui->angle->value() * count));
     for (int i = -limit; i <= limit; ++i) {
         qreal x = static_cast<qreal>(i) / count;
         beam = Beam(start, x);
