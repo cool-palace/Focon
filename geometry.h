@@ -96,20 +96,22 @@ public:
 
 class Detector {
 private:
-    qreal field_of_view;
-    qreal diameter;
-    qreal z_position;
+    qreal aperture, z_pos, z_offset;
+    qreal field_of_view, diameter;
 
 public:
     Detector() = default;
-    Detector(qreal fov, qreal diameter, qreal z)
-        : field_of_view(fov), diameter(diameter), z_position(z) {};
+    Detector(qreal aperture, qreal z_pos, qreal z_offset, qreal fov, qreal diameter)
+        : aperture(aperture), z_pos(z_pos), z_offset(z_offset), field_of_view(fov), diameter(diameter){};
     qreal fov() const { return field_of_view; }
     qreal r() const { return diameter/2; }
-    qreal z() const { return z_position; }
+    qreal window_radius() const { return aperture/2; }
+    qreal window_z() const { return z_pos; }
+    qreal detector_z() const { return z_pos + z_offset; }
 
-    Point intersection(const Beam& beam) const;
-    bool hit(const Beam& beam) { return intersection(beam).is_in_radius(r()); }
+    Point intersection(const Beam& beam, qreal z) const;
+    bool hit(const Beam& beam) { return intersection(beam,window_z()).is_in_radius(window_radius())
+                                        && intersection(beam,detector_z()).is_in_radius(r()); }
     bool missed(const Beam& beam) { return !hit(beam); }
     bool detected(const Beam& beam) { return hit(beam) && beam.gamma() < fov(); }
 };

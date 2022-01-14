@@ -18,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent)
     , focon_up(new QGraphicsLineItem())
     , focon_down(new QGraphicsLineItem())
     , detector_yoz(new QGraphicsLineItem())
+    , window_up(new QGraphicsLineItem())
+    , window_down(new QGraphicsLineItem())
     , circle(new QGraphicsEllipseItem())
     , circle_out(new QGraphicsEllipseItem())
     , x_label_xoy(new QGraphicsSimpleTextItem("x"))
@@ -64,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     ui->view->setScene(scene);
-    scene->setSceneRect(0,0,ui->view->width(), ui->view->height());
+    scene->setSceneRect(0,0,ui->view->width()-margin, ui->view->height());
     init();
 
     qreal x_axis_pos = scene->height()/2;
@@ -93,7 +95,6 @@ MainWindow::MainWindow(QWidget *parent)
     origin_label_xoy->setFont(font);
     origin_label_yoz->setFont(font);
 
-//    //result = new QGraphicsTextItem();
     y_axis->setPen(QPen(Qt::DashDotLine));
     z_axis->setPen(QPen(Qt::DashDotLine));
     x_axis_xoy->setPen(QPen(Qt::DashDotLine));
@@ -104,6 +105,8 @@ MainWindow::MainWindow(QWidget *parent)
     scene->addItem(y_axis_xoy);
     scene->addItem(focon_up);
     scene->addItem(focon_down);
+    scene->addItem(window_up);
+    scene->addItem(window_down);
     scene->addItem(detector_yoz);
     scene->addItem(circle);
     scene->addItem(circle_out);
@@ -136,7 +139,7 @@ void MainWindow::init() {
     qreal x_axis_pos = scene->height()/2;
 
     // rescaling
-    qreal scale_based_on_length = x_axis_length / ui->length->value();
+    qreal scale_based_on_length = x_axis_length / (ui->length->value() + ui->offset_det->value());
     qreal scale_based_on_diameter = y_axis_length / qMax(ui->d_in->value(), ui->d_out->value());
     scale = qMin(scale_based_on_length, scale_based_on_diameter);
     scale_xoy = diameter / qMax(ui->d_in->value(), ui->d_out->value());
@@ -148,14 +151,15 @@ void MainWindow::init() {
     circle_out->setRect(circle_out_x, circle_out_y + margin, diameter_outer, diameter_outer);
     circle->setRect(scene->width()-diameter, margin, diameter, diameter);
 
-    // updating geometrical objects
+    // updating geometrical objects and detector
     start = Point(-ui->offset->value(), -ui->height->value(), 0);
     if (cone != nullptr) delete cone;
     cone = (ui->d_in->value() != ui->d_out->value()
                 ? new Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value())
                 : new Tube(ui->d_in->value(), ui->length->value()));
     beam = Beam(start, ui->angle->value());
-    detector = Detector(ui->fov->value(), ui->d_det->value(), ui->length->value());
+    detector = Detector(ui->aperture->value(), ui->length->value(), ui->offset_det->value(),
+                        ui->fov->value(), ui->d_det->value());
 
     // updating z axis' projection and origin points
     z_axis->setLine(-margin, x_axis_pos, x_axis_length + margin, x_axis_pos);
@@ -166,17 +170,19 @@ void MainWindow::init() {
     qreal z_end = ui->length->value() * scale;
     focon_up->setLine(0, x_axis_pos - cone->r1() * scale, z_end, x_axis_pos - cone->r2() * scale);
     focon_down->setLine(0, x_axis_pos + cone->r1() * scale, z_end, x_axis_pos + cone->r2() * scale);
-    detector_yoz->setLine(z_end, x_axis_pos + detector.r() * scale, z_end, x_axis_pos - detector.r() * scale);
+    window_up->setLine(z_end, x_axis_pos - cone->r2() * scale, z_end, x_axis_pos - detector.window_radius() * scale);
+    window_down->setLine(z_end, x_axis_pos + cone->r2() * scale, z_end, x_axis_pos + detector.window_radius() * scale);
+    detector_yoz->setLine(detector.detector_z() * scale, x_axis_pos + detector.r() * scale, detector.detector_z() * scale, x_axis_pos - detector.r() * scale);
 }
 
 void MainWindow::clear() {
-    for (int i = 0; i < beams.size(); ++i) {
-        delete beams[i];
+    for (auto& beam : beams) {
+        delete beam;
     }
     beams.clear();
 
-    for (int i = 0; i < beams_xoy.size(); ++i) {
-        delete beams_xoy[i];
+    for (auto& beam : beams_xoy) {
+        delete beam;
     }
     beams_xoy.clear();
 }
@@ -185,7 +191,7 @@ void MainWindow::draw(int rotation_angle) {
     qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
     for (int i = 0; i < points.size()-1; ++i) {        
         QLineF line = QLineF(points[i].z() * scale, -(-points[i].y()*qCos(theta) + points[i].x()*qSin(theta)) * scale + scene->height()/2,
-                             points[i+1].z()* scale, -(-points[i+1].y()*qCos(theta) + points[i+1].x()*qSin(theta))* scale + scene->height()/2);
+                             points[i+1].z() * scale, -(-points[i+1].y()*qCos(theta) + points[i+1].x()*qSin(theta))* scale + scene->height()/2);
         beams.push_back(new QGraphicsLineItem(line));
         scene->addItem(beams.back());
 
@@ -327,9 +333,9 @@ void MainWindow::save_settings() {
                               {"Mode", ui->mode->currentIndex()},
                               {"Rotation", ui->rotation->value()}
                             };
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save file"),
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"),
                                                     QCoreApplication::applicationDirPath() + "//untitled.foc",
-                                                    tr("Focon settings files (*.foc)"));
+                                                    tr("Файлы настроек фокона (*.foc)"));
     if (!fileName.isNull()) {
         QFile file(fileName);
         if (file.open(QFile::WriteOnly | QFile::Truncate)) {
@@ -342,9 +348,9 @@ void MainWindow::save_settings() {
 }
 
 void MainWindow::load_settings() {
-    QString filepath = QFileDialog::getOpenFileName(nullptr, "Open a settings file",
+    QString filepath = QFileDialog::getOpenFileName(nullptr, "Открыть файл настроек",
                                                     QCoreApplication::applicationDirPath(),
-                                                    "Focon settings files (*.foc)");
+                                                    "Файлы настроек фокона (*.foc)");
     QFile file;
     file.setFileName(filepath);
     file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -369,9 +375,9 @@ void MainWindow::load_settings() {
 }
 
 void MainWindow::save_image() {
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save image"),
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить изображение"),
                                                     QCoreApplication::applicationDirPath(),
-                                                    tr("PNG image (*.png)"));
+                                                    tr("PNG-изображение (*.png)"));
     if (!fileName.isNull()) {
         QPixmap pixMap = ui->view->grab();
         pixMap.save(fileName);
@@ -430,7 +436,6 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
     } else status = HIT;
 
     return status;
-//    return intersection.z() >= cone->length() || cone->r1() < cone->r2();
 }
 
 void MainWindow::calculate_parallel_beams() {
@@ -492,8 +497,8 @@ void MainWindow::calculate_every_beam() {
             start = Point(-x, -y, 0);
             if (start.is_in_radius(cone->r1())) {
                 QPair<int, int> current_result = calculate_divergent_beams();
-                // The results are simmetrical relative to y axis, hence doubling total count for i > 0
-                // The results are also simmetrical relative to x axis due to divergent beam calculation method used
+                // The results are simmetrical relative to y axis, hence doubling count for i > 0
+                // The results are also simmetrical relative to x axis due to divergent beam modelling method used
                 beams_passed += (i > 0 ? 2 : 1) * (j > 0 ? 2 : 1) * current_result.first;
                 beams_total += (i > 0 ? 2 : 1) * (j > 0 ? 2 : 1) * current_result.second;
             }

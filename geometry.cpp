@@ -79,9 +79,9 @@ Point Cone::intersection(const Beam& beam) const {
     return p;
 }
 
-Point Detector::intersection(const Beam &beam) const {
-    qreal val = (z() - beam.z()) / beam.cos_g();
+Point Detector::intersection(const Beam &beam, qreal z) const {
+    qreal val = (z - beam.z()) / beam.cos_g();
     qreal x = val * beam.cos_a() + beam.x();
     qreal y = val * beam.cos_b() + beam.y();
-    return Point(x, y, z());
+    return Point(x, y, z);
 }

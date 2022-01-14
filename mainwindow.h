@@ -64,6 +64,8 @@ private:
     QGraphicsLineItem * focon_up;
     QGraphicsLineItem * focon_down;
     QGraphicsLineItem * detector_yoz;
+    QGraphicsLineItem * window_up;
+    QGraphicsLineItem * window_down;
     QGraphicsEllipseItem * circle;
     QGraphicsEllipseItem * circle_out;
 
