@@ -349,6 +349,11 @@
             <string>Метод Монте-Карло</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>Оптимизация длины</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item row="5" column="0">

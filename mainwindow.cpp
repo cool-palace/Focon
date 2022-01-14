@@ -79,7 +79,6 @@ MainWindow::MainWindow(QWidget *parent)
     y_axis_xoy->setLine(circle->rect().x()+diameter/2, 0, circle->rect().x() + diameter/2, diameter + 2*margin);
     x_axis_xoy->setTransformOriginPoint(x_axis_xoy->line().center());
     y_axis_xoy->setTransformOriginPoint(y_axis_xoy->line().center());
-    x_axis_xoy->setPen(QColor(Qt::white));
 
     // setting axes' labels
     x_label_xoy->setPos(x_axis_xoy->line().p2() + x_axis_label_offset);
@@ -178,7 +177,6 @@ void MainWindow::init() {
 
 void MainWindow::set_colors(bool night_theme_on) {
     scene->setBackgroundBrush(QBrush(night_theme_on ? QColor(64,64,64) : Qt::white));
-
     auto color = night_theme_on ? Qt::white : Qt::black;
 
     QPen axis_pen(QBrush(color),1,Qt::DashDotLine);
@@ -336,16 +334,19 @@ void MainWindow::build() {
         }
         break;
     case PARALLEL_BUNDLE:
-        calculate_parallel_beams();
+        show_results(calculate_parallel_beams());
         break;
     case DIVERGENT_BUNDLE:
-        calculate_divergent_beams();
+        show_results(calculate_divergent_beams());
         break;
     case EXHAUSTIVE_SAMPLING:
-        calculate_every_beam();
+        show_results(calculate_every_beam());
         break;
     case MONTE_CARLO_METHOD:
-        monte_carlo_method();
+        show_results(monte_carlo_method());
+        break;
+    case LENGTH_OPTIMISATION:
+        optimal_length();
         break;
     default:
         break;
@@ -498,7 +499,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
     return status;
 }
 
-void MainWindow::calculate_parallel_beams() {
+QPair<int, int> MainWindow::calculate_parallel_beams() {
     int beams_total = 0;
     int beams_passed = 0;
     int count = 50;
@@ -516,14 +517,16 @@ void MainWindow::calculate_parallel_beams() {
                 if (status == DETECTED) {
                     beams_passed += (i > 0 ? 2 : 1);
                 }
-                draw(points.back(), status, ui->rotation->value());
-                if (x > 0) {
-                    draw(points.back().x_pair(), status, ui->rotation->value());
+                if (ui->mode->currentIndex() == PARALLEL_BUNDLE) {
+                    draw(points.back(), status, ui->rotation->value());
+                    if (x > 0) {
+                        draw(points.back().x_pair(), status, ui->rotation->value());
+                    }
                 }
             }
         }
     }
-    show_results(beams_passed, beams_total);
+    return qMakePair(beams_passed, beams_total);
 }
 
 QPair<int, int> MainWindow::calculate_divergent_beams() {
@@ -542,11 +545,10 @@ QPair<int, int> MainWindow::calculate_divergent_beams() {
         }
         draw(points.back(), status, ui->rotation->value());
     }
-    show_results(beams_passed, beams_total);
     return qMakePair(beams_passed, beams_total);
 }
 
-void MainWindow::calculate_every_beam() {
+QPair<int, int> MainWindow::calculate_every_beam() {
     int beams_total = 0;
     int beams_passed = 0;
     int count = 20;
@@ -564,10 +566,10 @@ void MainWindow::calculate_every_beam() {
             }
         }
     }
-    show_results(beams_passed, beams_total);
+    return qMakePair(beams_passed, beams_total);
 }
 
-void MainWindow::monte_carlo_method() {
+QPair<int, int> MainWindow::monte_carlo_method() {
     int beams_total = 0;
     int beams_passed = 0;
     int count = 100000;
@@ -585,10 +587,29 @@ void MainWindow::monte_carlo_method() {
             }
         } else --i;
     }
-    show_results(beams_passed, beams_total);
+    return qMakePair(beams_passed, beams_total);
 }
 
-void MainWindow::show_results(int beams_passed, int beams_total) {
+void MainWindow::optimal_length() {
+    bool obtained_non_zero_value = false;
+    bool values_zeroed_out = false;
+    for (int i = 10; i < 1000 && !values_zeroed_out; i += 5) {
+        qreal length = static_cast<qreal>(i);
+        cone->set_length(length);
+        detector.set_position(length);
+        auto result = calculate_every_beam();
+        int v = result.first;
+        int w = result.second;
+        if (!obtained_non_zero_value) {
+            if (v > 0) obtained_non_zero_value = true;
+        } else if (v == 0) values_zeroed_out = true;
+        qDebug() << i << v << w;
+    }
+}
+
+void MainWindow::show_results(QPair<int, int> result) {
+    int beams_passed = result.first;
+    int beams_total = result.second;
     QString passed = "Принято ";
     QString beams_of = " лучей из ";
 

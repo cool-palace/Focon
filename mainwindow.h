@@ -87,7 +87,8 @@ private:
         PARALLEL_BUNDLE,
         DIVERGENT_BUNDLE,
         EXHAUSTIVE_SAMPLING,
-        MONTE_CARLO_METHOD
+        MONTE_CARLO_METHOD,
+        LENGTH_OPTIMISATION
     };
 
     void showEvent(QShowEvent * event) override;
@@ -100,11 +101,12 @@ private:
     void set_beam_color(QGraphicsLineItem * beam, BeamStatus status);
     void init();
     BeamStatus calculate_single_beam_path();
-    void calculate_parallel_beams();
+    QPair<int, int> calculate_parallel_beams();
     QPair<int, int> calculate_divergent_beams();
-    void calculate_every_beam();
-    void monte_carlo_method();
-    void show_results(int, int);
+    QPair<int, int> calculate_every_beam();
+    QPair<int, int> monte_carlo_method();
+    void optimal_length();
+    void show_results(QPair<int, int>);
     //    QGraphicsTextItem * result;
 };
 #endif // MAINWINDOW_H

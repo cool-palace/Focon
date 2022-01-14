@@ -10,7 +10,7 @@ private:
     qreal x_, y_, z_;
 public:
     Point(qreal x, qreal y, qreal z) : x_(x), y_(y), z_(z) {}
-    Point() : x_(0), y_(0), z_(0) {};
+    Point() : x_(0), y_(0), z_(0) {}
     qreal x() const { return x_; }
     qreal y() const { return y_; }
     qreal z() const { return z_; }
@@ -24,7 +24,7 @@ private:
     Point p;
     qreal dx, dy, dz;
 public:
-    Beam() : p(Point()), dx(0), dy(0), dz(0) {};
+    Beam() : p(Point()), dx(0), dy(0), dz(0) {}
     Beam(Point p, qreal angle)
         : p(p), dx(0), dy(qSin(qDegreesToRadians(-angle))), dz(qCos(qDegreesToRadians(-angle))) {}
     Beam(Point p, qreal dx, qreal dy, qreal dz) : p(p), dx(dx), dy(dy), dz(dz) {}
@@ -66,6 +66,7 @@ public:
     virtual qreal phi() const { return 0; }
     virtual Point intersection(const Beam& beam) const;
 
+    void set_length(qreal new_length) { length_ = new_length; }
 };
 
 class Cone : public Tube {
@@ -75,7 +76,7 @@ private:
 
 public:
     Cone(qreal D1, qreal D2, qreal l);
-    ~Cone() = default;
+    ~Cone() override = default;
 
     virtual qreal r2() const override { return diameter_out/2; }
     qreal d2() const {return diameter_out; }
@@ -102,7 +103,7 @@ private:
 public:
     Detector() = default;
     Detector(qreal aperture, qreal z_pos, qreal z_offset, qreal fov, qreal diameter)
-        : aperture(aperture), z_pos(z_pos), z_offset(z_offset), field_of_view(fov), diameter(diameter){};
+        : aperture(aperture), z_pos(z_pos), z_offset(z_offset), field_of_view(fov), diameter(diameter) {}
     qreal fov() const { return field_of_view; }
     qreal r() const { return diameter/2; }
     qreal window_radius() const { return aperture/2; }
@@ -114,6 +115,8 @@ public:
                                         && intersection(beam,detector_z()).is_in_radius(r()); }
     bool missed(const Beam& beam) { return !hit(beam); }
     bool detected(const Beam& beam) { return hit(beam) && beam.gamma() < fov(); }
+
+    void set_position(qreal z) { z_pos = z; }
 };
 
 #endif // GEOMETRY_H
