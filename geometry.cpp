@@ -43,7 +43,7 @@ void Beam::reflect() {
 }
 
 Point Tube::intersection(const Beam &beam) const {
-    if (beam.d_y() == 0) return Point(beam.x(), beam.y(), 2*length());
+    if (qFabs(beam.d_y()) < 1e-6) return Point(beam.x(), beam.y(), 2*length());
     qreal a = pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2);
     qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b());
     qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow(r1(), 2);
@@ -53,7 +53,7 @@ Point Tube::intersection(const Beam &beam) const {
 }
 
 Point Cone::intersection(const Beam& beam) const {
-    if (beam.d_y() == 0 && beam.x() == 0 && beam.y() == 0) {
+    if (qFabs(beam.d_y()) < 1e-6 && qFabs(beam.x()) < 1e-6 && qFabs(beam.y()) < 1e-6) {
         return Point(0, 0, z_k() * (r1() > r2() ? 1 : -1));
     }
     qreal a = pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2) - pow(beam.cos_g()*tan_phi(), 2);

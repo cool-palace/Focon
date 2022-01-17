@@ -105,8 +105,11 @@ private:
     QPair<int, int> calculate_divergent_beams();
     QPair<int, int> calculate_every_beam();
     QPair<int, int> monte_carlo_method();
-    void optimal_length();
+    QPair<int, qreal> optimal_length();
+    qreal optimal_length_cycle(int& max, int& optimal_value);
+    qreal loss(QPair<int, int>);
     void show_results(QPair<int, int>);
+    void show_results(QPair<int, qreal>);
     //    QGraphicsTextItem * result;
 };
 #endif // MAINWINDOW_H

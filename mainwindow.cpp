@@ -7,6 +7,8 @@ constexpr qreal diameter = 150;
 constexpr qreal margin = 10;
 constexpr QPointF y_axis_label_offset = QPointF(-15,-10);
 constexpr QPointF x_axis_label_offset = QPointF(-5,-5);
+constexpr qreal loss_limit = 10;
+constexpr int length_limit = 500;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -154,7 +156,7 @@ void MainWindow::init() {
     // updating geometrical objects and detector
     start = Point(-ui->offset->value(), -ui->height->value(), 0);
     if (cone != nullptr) delete cone;
-    cone = (ui->d_in->value() != ui->d_out->value()
+    cone = (qFabs(ui->d_in->value() - ui->d_out->value()) > 1e-6
                 ? new Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value())
                 : new Tube(ui->d_in->value(), ui->length->value()));
     beam = Beam(start, ui->angle->value());
@@ -305,7 +307,7 @@ void MainWindow::rotate(int rotation_angle) {
     case PARALLEL_BUNDLE:
         for (int i = 0; i < points.size(); ++i) {
             draw(points[i], statuses[i], rotation_angle);
-            if (points[i].x() != 0) {
+            if (qFabs(points[i].x()) > 1e-6) {
                 draw(points[i].x_pair(), statuses[i], rotation_angle);
             }
         }
@@ -346,7 +348,7 @@ void MainWindow::build() {
         show_results(monte_carlo_method());
         break;
     case LENGTH_OPTIMISATION:
-        optimal_length();
+        show_results(optimal_length());
         break;
     default:
         break;
@@ -449,7 +451,7 @@ void MainWindow::save_image() {
 MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
     points.push_back(start);
     // Perpendicular beams cause infinite loop in tubes
-    if (cone->r1() == cone->r2() && fabs(beam.d_y()) == 1) {
+    if (qFabs(cone->r1() - cone->r2()) < 1e-6 && qFabs(beam.d_y()) == 1) {
         ui->statusbar->showMessage("Некорректный входной угол");
         return REFLECTED;
     }
@@ -578,7 +580,7 @@ QPair<int, int> MainWindow::monte_carlo_method() {
         qreal x = 2 * rng.generateDouble() - 1;
         qreal y = 2 * rng.generateDouble() - 1;
         start = Point(x * cone->r1(), y * cone->r1(), 0);
-        if (x*x + y*y < cone->r1()*cone->r1()) {
+        if (start.is_in_radius(cone->r1())) {
             beam = Beam(start, (2 * rng.generateDouble() - 1) * fabs(ui->angle->value()));
             ++beams_total;
             BeamStatus status = calculate_single_beam_path();
@@ -590,21 +592,49 @@ QPair<int, int> MainWindow::monte_carlo_method() {
     return qMakePair(beams_passed, beams_total);
 }
 
-void MainWindow::optimal_length() {
-    bool obtained_non_zero_value = false;
-    bool values_zeroed_out = false;
-    for (int i = 10; i < 1000 && !values_zeroed_out; i += 5) {
+qreal MainWindow::optimal_length_cycle(int& max, int& optimal_value) {
+    int low_limit = optimal_value == 0 ? 10 : optimal_value - 9;
+    int high_limit = optimal_value == 0 ? length_limit : optimal_value + 9;
+    int step = optimal_value == 0 ? 10 : 1;
+    QPair<int, int> result;
+
+    for (int i = low_limit; i <= high_limit; i+= step) {
         qreal length = static_cast<qreal>(i);
         cone->set_length(length);
         detector.set_position(length);
-        auto result = calculate_every_beam();
-        int v = result.first;
-        int w = result.second;
-        if (!obtained_non_zero_value) {
-            if (v > 0) obtained_non_zero_value = true;
-        } else if (v == 0) values_zeroed_out = true;
-        qDebug() << i << v << w;
+        result = calculate_every_beam();
+        int current_value = result.first;
+        // Optimal length criteria:
+        // 1. Minimum loss (maximum number of beams passed) in exhaustive sampling
+        // 2. Acceptable loss value for parallel bundle at given angle
+        if (current_value > max && loss(calculate_parallel_beams()) < loss_limit) {
+            max = current_value;
+            optimal_value = i;
+        }
+        qDebug() << i << current_value;
     }
+    qDebug() << optimal_value << max;
+    return loss(result);
+}
+
+QPair<int, qreal> MainWindow::optimal_length() {
+    int max = 0;
+    int optimal_value = 0;
+
+    // First iteration gives the approximate optimal value within the accuracy of ±9
+    optimal_length_cycle(max, optimal_value);
+
+    if (max == 0) return qMakePair(length_limit, loss_limit);
+
+    // If the first iteration doesn't fail, then the second gives the optimal integer value
+    qreal loss = optimal_length_cycle(max, optimal_value);
+    return qMakePair(optimal_value, loss);
+}
+
+qreal MainWindow::loss(QPair<int, int> result) {
+    int beams_passed = result.first;
+    int beams_total = result.second;
+    return 10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10);
 }
 
 void MainWindow::show_results(QPair<int, int> result) {
@@ -623,5 +653,16 @@ void MainWindow::show_results(QPair<int, int> result) {
     }
 
     ui->statusbar->showMessage(passed + QString().setNum(beams_passed) + beams_of + QString().setNum(beams_total)
-                               + ". Потери составляют " + QString().setNum(10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10)) + " дБ.");
+                               + ". Потери составляют " + QString().setNum(loss(result)) + " дБ.");
+}
+
+void MainWindow::show_results(QPair<int, qreal> result) {
+    if (result.first != length_limit || qFabs(result.second - loss_limit) > 1e-6) {
+        ui->statusbar->showMessage("Оптимальная длина фокона составляет " + QString().setNum(result.first)
+                                   + " мм. Потери составляют " + QString().setNum(result.second) + " дБ.");
+    } else {
+        ui->statusbar->showMessage("Оптимального значения длины в пределах до " + QString().setNum(length_limit)
+                                   + " мм не найдено: потери для боковых пучков превышают "
+                                   + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
+    }
 }
