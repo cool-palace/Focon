@@ -25,6 +25,11 @@ MainWindow::MainWindow(QWidget *parent)
     , window_down(new QGraphicsLineItem())
     , circle(new QGraphicsEllipseItem())
     , circle_out(new QGraphicsEllipseItem())
+    , lens_yoz(new QGraphicsLineItem())
+    , lens_arrow_up_left(new QGraphicsLineItem())
+    , lens_arrow_up_right(new QGraphicsLineItem())
+    , lens_arrow_down_left(new QGraphicsLineItem())
+    , lens_arrow_down_right(new QGraphicsLineItem())
     , x_label_xoy(new QGraphicsTextItem("x"))
     , y_label_xoy(new QGraphicsTextItem("y"))
     , y_label_yoz(new QGraphicsTextItem("y"))
@@ -39,22 +44,34 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->save, SIGNAL(triggered(bool)), this, SLOT(save_settings()));
     connect(ui->save_image, SIGNAL(triggered(bool)), this, SLOT(save_image()));
     connect(ui->night_mode, SIGNAL(toggled(bool)), this, SLOT(set_colors(bool)));
+    connect(ui->lens, SIGNAL(toggled(bool)), this, SLOT(set_lens(bool)));
+
+    connect(ui->Hamamatsu_G12180_005A, QOverload<bool>::of(&QAction::triggered), this, [&]() {
+        ui->aperture->setValue(2.2);
+        ui->offset_det->setValue(1.1);
+        ui->d_det->setValue(0.5);
+    });
+
+    connect(ui->Hamamatsu_G12180_010A, QOverload<bool>::of(&QAction::triggered), this, [&]() {
+        ui->aperture->setValue(2.2);
+        ui->offset_det->setValue(1.1);
+        ui->d_det->setValue(1);
+    });
+
+    connect(ui->Hamamatsu_G12180_020A, QOverload<bool>::of(&QAction::triggered), this, [&]() {
+        ui->aperture->setValue(4.5);
+        ui->offset_det->setValue(2.4);
+        ui->d_det->setValue(2);
+    });
 
     connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [&](int mode) {
         clear();
         // Rotation should be disabled until recalculation in new mode
         ui->rotation->setEnabled(false);
 
-        switch (mode) {
-        case PARALLEL_BUNDLE: case EXHAUSTIVE_SAMPLING: case MONTE_CARLO_METHOD:
-            ui->height->setEnabled(false);
-            ui->offset->setEnabled(false);
-            break;
-        default:
-            ui->height->setEnabled(true);
-            ui->offset->setEnabled(true);
-            break;
-        }
+        bool point_coordinates_enabled = mode == SINGLE_BEAM_CALCULATION || mode == DIVERGENT_BUNDLE;
+        ui->height->setEnabled(point_coordinates_enabled);
+        ui->offset->setEnabled(point_coordinates_enabled);
     });
 
     ui->height->setMaximum(ui->d_in->value()/2);
@@ -82,6 +99,12 @@ MainWindow::MainWindow(QWidget *parent)
     x_axis_xoy->setTransformOriginPoint(x_axis_xoy->line().center());
     y_axis_xoy->setTransformOriginPoint(y_axis_xoy->line().center());
 
+    // setting lens arrows
+    lens_arrow_up_left->setLine(0,0,-10,10);
+    lens_arrow_up_right->setLine(0,0,10,10);
+    lens_arrow_down_left->setLine(0,0,-10,-10);
+    lens_arrow_down_right->setLine(0,0,10,-10);
+
     // setting axes' labels
     x_label_xoy->setPos(x_axis_xoy->line().p2() + x_axis_label_offset);
     y_label_xoy->setPos(y_axis_xoy->line().p1() + y_axis_label_offset);
@@ -99,6 +122,7 @@ MainWindow::MainWindow(QWidget *parent)
     origin_label_xoy->setFont(font);
     origin_label_yoz->setFont(font);
 
+    set_lens(ui->lens->isChecked());
     set_colors(ui->night_mode->isChecked());
 
     scene->addItem(y_axis);
@@ -112,6 +136,11 @@ MainWindow::MainWindow(QWidget *parent)
     scene->addItem(detector_yoz);
     scene->addItem(circle);
     scene->addItem(circle_out);
+    scene->addItem(lens_yoz);
+    scene->addItem(lens_arrow_up_left);
+    scene->addItem(lens_arrow_up_right);
+    scene->addItem(lens_arrow_down_left);
+    scene->addItem(lens_arrow_down_right);
     scene->addItem(x_label_xoy);
     scene->addItem(y_label_xoy);
     scene->addItem(y_label_yoz);
@@ -162,6 +191,7 @@ void MainWindow::init() {
     beam = Beam(start, ui->angle->value());
     detector = Detector(ui->aperture->value(), ui->length->value(), ui->offset_det->value(),
                         ui->fov->value(), ui->d_det->value());
+    lens = Lens(ui->length->value() + ui->offset_det->value());
 
     // updating z axis' projection and origin points
     z_axis->setLine(-margin, x_axis_pos, x_axis_length + margin, x_axis_pos);
@@ -175,6 +205,14 @@ void MainWindow::init() {
     window_up->setLine(z_end, x_axis_pos - cone->r2() * scale, z_end, x_axis_pos - detector.window_radius() * scale);
     window_down->setLine(z_end, x_axis_pos + cone->r2() * scale, z_end, x_axis_pos + detector.window_radius() * scale);
     detector_yoz->setLine(detector.detector_z() * scale, x_axis_pos + detector.r() * scale, detector.detector_z() * scale, x_axis_pos - detector.r() * scale);
+
+    // updating lens' representation
+    QLineF line = QLineF(focon_up->line().p1(), focon_down->line().p1());
+    lens_yoz->setLine(line);
+    lens_arrow_up_left->setPos(focon_up->line().p1());
+    lens_arrow_up_right->setPos(focon_up->line().p1());
+    lens_arrow_down_left->setPos(focon_down->line().p1());
+    lens_arrow_down_right->setPos(focon_down->line().p1());
 }
 
 void MainWindow::set_colors(bool night_theme_on) {
@@ -195,6 +233,11 @@ void MainWindow::set_colors(bool night_theme_on) {
     window_up->setPen(pen);
     window_down->setPen(pen);
     detector_yoz->setPen(pen);
+    lens_yoz->setPen(pen);
+    lens_arrow_up_left->setPen(pen);
+    lens_arrow_up_right->setPen(pen);
+    lens_arrow_down_left->setPen(pen);
+    lens_arrow_down_right->setPen(pen);
 
     x_label_xoy->setDefaultTextColor(color);
     y_label_xoy->setDefaultTextColor(color);
@@ -204,6 +247,14 @@ void MainWindow::set_colors(bool night_theme_on) {
     y_label_xoy->setDefaultTextColor(color);
     origin_label_xoy->setDefaultTextColor(color);
     origin_label_yoz->setDefaultTextColor(color);
+}
+
+void MainWindow::set_lens(bool visible) {
+    lens_yoz->setVisible(visible);
+    lens_arrow_up_left->setVisible(visible);
+    lens_arrow_up_right->setVisible(visible);
+    lens_arrow_down_left->setVisible(visible);
+    lens_arrow_down_right->setVisible(visible);
 }
 
 void MainWindow::clear() {
@@ -368,7 +419,8 @@ void MainWindow::save_settings() {
                               {"Detector's FOV", ui->fov->value()},
                               {"Detector's diameter", ui->d_det->value()},
                               {"Mode", ui->mode->currentIndex()},
-                              {"Rotation", ui->rotation->value()}
+                              {"Rotation", ui->rotation->value()},
+                              {"Lens",ui->lens->isChecked()}
                             };
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"),
                                                     QCoreApplication::applicationDirPath() + "//untitled.foc",
@@ -433,6 +485,9 @@ void MainWindow::load_settings() {
     if (json_file.contains("Mode")) {
         ui->mode->setCurrentIndex(json_file.value("Mode").toInt());
     }
+    if (json_file.contains("Lens")) {
+        ui->lens->setChecked(json_file.value("Lens").toBool());
+    }
 
     ui->statusbar->showMessage("Настройки загружены");
 }
@@ -451,13 +506,23 @@ void MainWindow::save_image() {
 MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
     points.push_back(start);
     // Perpendicular beams cause infinite loop in tubes
-    if (qFabs(cone->r1() - cone->r2()) < 1e-6 && qFabs(beam.d_y()) == 1) {
+    if (qFabs(cone->r1() - cone->r2()) < 1e-6 && qFabs(beam.d_y()) > 0.999999) {
         ui->statusbar->showMessage("Некорректный входной угол");
         return REFLECTED;
     }
 
+    if (ui->lens->isChecked()) {
+        beam = lens.refracted(beam).unit(beam.p1());
+    }
+
+    int i = 0;
+//    qDebug() << "Beam start " << beam.x() << beam.y() << beam.z();
     while(true) {
+        ++i;
+//        qDebug() << i;
+//        if (i > 48) qDebug() << "Beam " << beam.x() << beam.y() << beam.z();
         intersection = cone->intersection(beam);
+//        if (i > 48) qDebug() << "Intersection " << intersection.x() << intersection.y() << intersection.z();
 
         switch (ui->mode->currentIndex()) {
         case SINGLE_BEAM_CALCULATION:
@@ -476,7 +541,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
         }
 
         // Transforming the beam after hitting a point outside of the cone is not necessary
-        if (intersection.z() < 0 || intersection.z() > cone->length()) break;
+        if (intersection.z() < 0 || intersection.z() > cone->length() /*|| i > 60 */ ) break;
 
         QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
         qreal ksi = qDegreesToRadians(-90 + line.angle());
@@ -504,7 +569,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
 QPair<int, int> MainWindow::calculate_parallel_beams() {
     int beams_total = 0;
     int beams_passed = 0;
-    int count = 50;
+    int count = /* cone->length() / cone->d2() >= 100 ? 20 : */ 50;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
         for (int j = -count; j < count; ++j) {
@@ -593,7 +658,7 @@ QPair<int, int> MainWindow::monte_carlo_method() {
 }
 
 qreal MainWindow::optimal_length_cycle(int& max, int& optimal_value) {
-    int low_limit = optimal_value == 0 ? 10 : optimal_value - 9;
+    int low_limit = optimal_value == 0 ? qCeil(cone->d1()) : optimal_value - 9;
     int high_limit = optimal_value == 0 ? length_limit : optimal_value + 9;
     int step = optimal_value == 0 ? 10 : 1;
     QPair<int, int> result;
@@ -602,6 +667,7 @@ qreal MainWindow::optimal_length_cycle(int& max, int& optimal_value) {
         qreal length = static_cast<qreal>(i);
         cone->set_length(length);
         detector.set_position(length);
+        lens.set_focus(detector.detector_z());
         result = calculate_every_beam();
         int current_value = result.first;
         // Optimal length criteria:
@@ -623,10 +689,10 @@ QPair<int, qreal> MainWindow::optimal_length() {
 
     // First iteration gives the approximate optimal value within the accuracy of ±9
     optimal_length_cycle(max, optimal_value);
-
+    // If it fails, return
     if (max == 0) return qMakePair(length_limit, loss_limit);
 
-    // If the first iteration doesn't fail, then the second gives the optimal integer value
+    // If it doesn't, then the second gives the optimal integer value
     qreal loss = optimal_length_cycle(max, optimal_value);
     return qMakePair(optimal_value, loss);
 }

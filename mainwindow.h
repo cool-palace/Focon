@@ -37,6 +37,7 @@ private slots:
     void load_settings();
     void save_image();
     void set_colors(bool night_theme_on);
+    void set_lens(bool visible);
 
 private:
     Ui::MainWindow *ui;
@@ -52,6 +53,7 @@ private:
     Point intersection;
     Tube * cone = nullptr;
     Detector detector;
+    Lens lens;
     Beam beam;
     BeamStatus single_beam_status;
     qreal scale;
@@ -69,6 +71,11 @@ private:
     QGraphicsLineItem * window_down;
     QGraphicsEllipseItem * circle;
     QGraphicsEllipseItem * circle_out;
+    QGraphicsLineItem * lens_yoz;
+    QGraphicsLineItem * lens_arrow_up_left;
+    QGraphicsLineItem * lens_arrow_up_right;
+    QGraphicsLineItem * lens_arrow_down_left;
+    QGraphicsLineItem * lens_arrow_down_right;
 
     QGraphicsTextItem * x_label_xoy;
     QGraphicsTextItem * y_label_xoy;

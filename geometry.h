@@ -16,7 +16,9 @@ public:
     qreal z() const { return z_; }
     Point x_pair() const { return Point(-x_, y_, z_);};
     bool operator==(const Point& p) { return x() == p.x() && y() == p.y() && z() == p.z(); }
-    bool is_in_radius(qreal radius) const { return x()*x() + y()*y() < radius * radius; }
+    qreal r_sqr() const { return x()*x() + y()*y(); }
+    qreal r() const { return qSqrt(r_sqr()); }
+    bool is_in_radius(qreal radius) const { return r_sqr() < radius * radius; }
 };
 
 class Beam {
@@ -28,6 +30,7 @@ public:
     Beam(Point p, qreal angle)
         : p(p), dx(0), dy(qSin(qDegreesToRadians(-angle))), dz(qCos(qDegreesToRadians(-angle))) {}
     Beam(Point p, qreal dx, qreal dy, qreal dz) : p(p), dx(dx), dy(dy), dz(dz) {}
+    Beam(Point p1, Point p2) : p(p1), dx(p2.x() - p1.x()), dy(p2.y() - p1.y()), dz(p2.z() - p1.z()) {}
 
     qreal length() const { return sqrt(dx*dx + dy*dy + dz*dz); }
 
@@ -52,6 +55,15 @@ public:
     void reflect();
 };
 
+class Plane {
+private:
+    qreal z_;
+public:
+    Plane(qreal z = 0) : z_(z) {}
+    qreal z() const { return z_; }
+    Point intersection(const Beam& beam) const;
+};
+
 class Tube {
 private:
     qreal diameter_in, length_;
@@ -61,6 +73,7 @@ public:
     virtual ~Tube() = default;
     qreal length() const { return length_; }
     qreal d1() const { return diameter_in; }
+    virtual qreal d2() const { return diameter_in; }
     qreal r1() const { return diameter_in/2; }
     virtual qreal r2() const { return diameter_in/2; }
     virtual qreal phi() const { return 0; }
@@ -78,11 +91,11 @@ public:
     Cone(qreal D1, qreal D2, qreal l);
     ~Cone() override = default;
 
-    virtual qreal r2() const override { return diameter_out/2; }
-    qreal d2() const {return diameter_out; }
+    qreal r2() const override { return diameter_out/2; }
+    qreal d2() const override { return diameter_out; }
     qreal tan_phi() const  { return (d1() - d2())/(2*length()); }
-    virtual qreal phi() const override { return qAtan(tan_phi()); }
-    virtual Point intersection(const Beam& beam) const override;
+    qreal phi() const override { return qAtan(tan_phi()); }
+    Point intersection(const Beam& beam) const override;
     Point vertex() const { return Point(0, 0, z_k()); }
 };
 
@@ -117,6 +130,19 @@ public:
     bool detected(const Beam& beam) { return hit(beam) && beam.gamma() < fov(); }
 
     void set_position(qreal z) { z_pos = z; }
+};
+
+class Lens {
+private:
+    qreal focus;
+
+public:
+    Lens() = default;
+    Lens(qreal f) : focus(f) {}
+
+    qreal F() const { return 1.0/focus; }
+    void set_focus(qreal f) { focus = f; }
+    Beam refracted(const Beam &beam) const;
 };
 
 #endif // GEOMETRY_H

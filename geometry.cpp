@@ -60,10 +60,9 @@ Point Cone::intersection(const Beam& beam) const {
     qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2));
     qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow((beam.z() - z_k()) * tan_phi(), 2);
     qreal d = pow(b, 2) - 4*a*c;
-    qreal t = (-b + qSqrt(d)) / (2*a);
+    qreal t = qFabs(a) > 1e-8 ? (-b + qSqrt(d))/(2*a) : -c/b;
+//    qDebug() << a << b << c << d << t;
     Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
-
-//    qDebug() << qSqrt(p.x()*p.x() + p.y()*p.y()) << ' ' << (z_k() - p.z())*tan_phi();
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
     if (!correct_root) {
         // False root means that the beam goes outward without intersecting the cone's surface
@@ -79,9 +78,18 @@ Point Cone::intersection(const Beam& beam) const {
     return p;
 }
 
-Point Detector::intersection(const Beam &beam, qreal z) const {
-    qreal val = (z - beam.z()) / beam.cos_g();
+Point Plane::intersection(const Beam &beam) const {
+    qreal val = (z() - beam.z()) / beam.cos_g();
     qreal x = val * beam.cos_a() + beam.x();
     qreal y = val * beam.cos_b() + beam.y();
-    return Point(x, y, z);
+    return Point(x, y, z());
+}
+
+Point Detector::intersection(const Beam &beam, qreal z) const {
+    return Plane(z).intersection(beam);
+}
+
+Beam Lens::refracted(const Beam &beam) const {
+    Beam meridional = Beam(Point(), beam.d_x(), beam.d_y(), beam.d_z());
+    return Beam(beam.p1(), Plane(focus).intersection(meridional));
 }
