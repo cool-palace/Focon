@@ -60,6 +60,7 @@ Point Cone::intersection(const Beam& beam) const {
     qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2));
     qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow((beam.z() - z_k()) * tan_phi(), 2);
     qreal d = pow(b, 2) - 4*a*c;
+    if (d < 0 && fabs(d) < 1e-8) d = 0;
     qreal t = qFabs(a) > 1e-8 ? (-b + qSqrt(d))/(2*a) : -c/b;
 //    qDebug() << a << b << c << d << t;
     Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());

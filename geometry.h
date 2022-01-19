@@ -14,7 +14,7 @@ public:
     qreal x() const { return x_; }
     qreal y() const { return y_; }
     qreal z() const { return z_; }
-    Point x_pair() const { return Point(-x_, y_, z_);};
+    Point x_pair() const { return Point(-x_, y_, z_); }
     bool operator==(const Point& p) { return x() == p.x() && y() == p.y() && z() == p.z(); }
     qreal r_sqr() const { return x()*x() + y()*y(); }
     qreal r() const { return qSqrt(r_sqr()); }

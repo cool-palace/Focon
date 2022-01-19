@@ -52,8 +52,6 @@ void MainWindow::build() {
     }
 }
 
-
-
 MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
     points.push_back(start);
     // Perpendicular beams cause infinite loop in tubes
@@ -239,9 +237,9 @@ qreal MainWindow::optimal_length_cycle(int& max, int& optimal_value) {
         } else {
             ++not_changing_count;
         }
-//        qDebug() << i << current_value;
+        qDebug() << i << current_value;
     }
-//    qDebug() << optimal_value << max;
+    qDebug() << optimal_value << max;
     return loss(max_result);
 }
 
