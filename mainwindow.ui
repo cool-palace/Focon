@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1006</width>
-    <height>762</height>
+    <width>1073</width>
+    <height>755</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -226,7 +226,7 @@
               <double>0.500000000000000</double>
              </property>
              <property name="value">
-              <double>10.000000000000000</double>
+              <double>5.000000000000000</double>
              </property>
             </widget>
            </item>
@@ -428,7 +428,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1006</width>
+     <width>1073</width>
      <height>20</height>
     </rect>
    </property>
@@ -443,7 +443,8 @@
     <property name="title">
      <string>Изображение</string>
     </property>
-    <addaction name="save_image"/>
+    <addaction name="save_whole_image"/>
+    <addaction name="save_image_xoy"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -476,9 +477,9 @@
     <string>Сохранить</string>
    </property>
   </action>
-  <action name="save_image">
+  <action name="save_whole_image">
    <property name="text">
-    <string>Сохранить</string>
+    <string>Сохранить полностью</string>
    </property>
   </action>
   <action name="night_mode">
@@ -513,6 +514,11 @@
   <action name="Hamamatsu_G12180_020A">
    <property name="text">
     <string>Hamamatsu G12180-020A</string>
+   </property>
+  </action>
+  <action name="save_image_xoy">
+   <property name="text">
+    <string>Сохранить сечение XOY</string>
    </property>
   </action>
  </widget>
