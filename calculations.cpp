@@ -26,11 +26,13 @@ void MainWindow::build() {
 
     switch (ui->mode->currentIndex()) {
     case SINGLE_BEAM_CALCULATION:
-        single_beam_status = calculate_single_beam_path();
-        draw(ui->rotation->value());
-        if (points.size() > 1) {
-            ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
-        }
+        if (start.is_in_radius(cone->r1())) {
+            single_beam_status = calculate_single_beam_path();
+            draw(ui->rotation->value());
+            if (points.size() > 1) {
+                ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
+            }
+        } else ui->statusbar->showMessage("Заданная точка входа луча находится вне апертуры.");
         break;
     case PARALLEL_BUNDLE:
         show_results(calculate_parallel_beams());
