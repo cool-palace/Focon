@@ -27,7 +27,7 @@ constexpr qreal margin = 10;
 constexpr QPointF y_axis_label_offset = QPointF(-15,-10);
 constexpr QPointF x_axis_label_offset = QPointF(-5,-5);
 constexpr qreal loss_limit = 10;
-constexpr int length_limit = 500;
+constexpr int length_limit = 700;
 
 class MainWindow : public QMainWindow
 {
@@ -124,6 +124,7 @@ private slots:
 
     // Calculations
     void init_objects();
+    void init_lens(qreal distance, bool less, bool more);
     void build();
     BeamStatus calculate_single_beam_path();
     QPair<int, int> calculate_parallel_beams();

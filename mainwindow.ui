@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1073</width>
-    <height>755</height>
+    <height>762</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -456,7 +456,15 @@
     <property name="title">
      <string>Элементы</string>
     </property>
+    <widget class="QMenu" name="defocusing">
+     <property name="title">
+      <string>Дефокусировка</string>
+     </property>
+     <addaction name="defocus_plus"/>
+     <addaction name="defocus_minus"/>
+    </widget>
     <addaction name="lens"/>
+    <addaction name="defocusing"/>
     <addaction name="separator"/>
     <addaction name="Hamamatsu_G12180_005A"/>
     <addaction name="Hamamatsu_G12180_010A"/>
@@ -519,6 +527,28 @@
   <action name="save_image_xoy">
    <property name="text">
     <string>Сохранить сечение XOY</string>
+   </property>
+  </action>
+  <action name="defocus_plus">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Положительная</string>
+   </property>
+  </action>
+  <action name="defocus_minus">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Отрицательная</string>
    </property>
   </action>
  </widget>

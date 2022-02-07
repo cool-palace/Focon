@@ -4,6 +4,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , lens(Lens(1))
     , scene(new QGraphicsScene())
     , y_axis(new QGraphicsLineItem())
     , z_axis(new QGraphicsLineItem())
@@ -37,6 +38,18 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->save_image_xoy, SIGNAL(triggered(bool)), this, SLOT(save_image_xoy()));
     connect(ui->night_mode, SIGNAL(toggled(bool)), this, SLOT(set_colors(bool)));
     connect(ui->lens, SIGNAL(toggled(bool)), this, SLOT(set_lens(bool)));
+
+    connect(ui->defocus_plus, QOverload<bool>::of(&QAction::toggled), this, [&](bool def_plus){
+        if (def_plus == true) {
+            ui->defocus_minus->setChecked(false);
+        }
+    });
+
+    connect(ui->defocus_minus, QOverload<bool>::of(&QAction::toggled), this, [&](bool def_minus){
+        if (def_minus == true) {
+            ui->defocus_plus->setChecked(false);
+        }
+    });
 
     connect(ui->Hamamatsu_G12180_005A, QOverload<bool>::of(&QAction::triggered), this, [&]() {
         ui->aperture->setValue(2.2);
@@ -233,6 +246,7 @@ void MainWindow::set_colors(bool night_theme_on) {
 }
 
 void MainWindow::set_lens(bool visible) {
+    ui->defocusing->setEnabled(visible);
     lens_yoz->setVisible(visible);
     lens_arrow_up_left->setVisible(visible);
     lens_arrow_up_right->setVisible(visible);

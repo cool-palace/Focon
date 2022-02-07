@@ -15,7 +15,8 @@ void MainWindow::save_settings() {
                               {"Detector's diameter", ui->d_det->value()},
                               {"Mode", ui->mode->currentIndex()},
                               {"Rotation", ui->rotation->value()},
-                              {"Lens",ui->lens->isChecked()}
+                              {"Lens",ui->lens->isChecked()},
+                              {"Defocusing", ui->defocus_plus->isChecked() ? "plus" : ui->defocus_minus->isChecked() ? "minus" : "none"}
                             };
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"),
                                                     QCoreApplication::applicationDirPath() + "//untitled.foc",
@@ -83,6 +84,12 @@ void MainWindow::load_settings() {
     if (json_file.contains("Lens")) {
         ui->lens->setChecked(json_file.value("Lens").toBool());
     }
+    if (json_file.contains("Defocusing")) {
+        auto def = json_file.value("Defocusing").toString();
+        ui->defocus_plus->setChecked(def == "plus");
+        ui->defocus_minus->setChecked(def == "minus");
+    }
+
 
     ui->statusbar->showMessage("Настройки загружены");
 }

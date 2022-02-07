@@ -43,7 +43,10 @@ void Beam::reflect() {
 }
 
 Point Tube::intersection(const Beam &beam) const {
+    // The only case when the beam does not intersect the tube is when the input angle == 0
+    // Then the exiting point coordinates in XOY are equal to the input coordinates
     if (qFabs(beam.d_y()) < 1e-6) return Point(beam.x(), beam.y(), 2*length());
+    // Else the intersection point can be found by finding the bigger root of the quadratic equation
     qreal a = pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2);
     qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b());
     qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow(r1(), 2);
@@ -53,6 +56,7 @@ Point Tube::intersection(const Beam &beam) const {
 }
 
 Point Cone::intersection(const Beam& beam) const {
+    // Axial beam intersects the cone's vertex and passes
     if (qFabs(beam.d_y()) < 1e-6 && qFabs(beam.x()) < 1e-6 && qFabs(beam.y()) < 1e-6) {
         return Point(0, 0, z_k() * (r1() > r2() ? 1 : -1));
     }
@@ -60,7 +64,11 @@ Point Cone::intersection(const Beam& beam) const {
     qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2));
     qreal c = pow(beam.x(), 2) + pow(beam.y(), 2) - pow((beam.z() - z_k()) * tan_phi(), 2);
     qreal d = pow(b, 2) - 4*a*c;
+    // There might be a case when 'd' turns out to be a miniscule negative number due to some floating point ambiguities
+    // Negative 'd' means that the beam does not intersect the cone at all, which is impossible
+    // So this case should be fixed by setting 'd' to zero
     if (d < 0 && fabs(d) < 1e-8) d = 0;
+    // If (a == 0) then the equation degenerates into linear equation
     qreal t = qFabs(a) > 1e-8 ? (-b + qSqrt(d))/(2*a) : -c/b;
 //    qDebug() << a << b << c << d << t;
     Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());

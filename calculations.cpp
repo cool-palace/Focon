@@ -12,10 +12,15 @@ void MainWindow::init_objects() {
     beam = Beam(start, ui->angle->value());
     detector = Detector(ui->aperture->value(), ui->length->value(), ui->offset_det->value(),
                         ui->fov->value(), ui->d_det->value());
-//    lens = Lens(detector.detector_z());
-    lens = Lens(detector.detector_z() * cone->r1() / (cone->r1() - detector.r()));
+    init_lens(detector.detector_z(), ui->defocus_minus->isChecked(), ui->defocus_plus->isChecked());
+
 }
 
+void MainWindow::init_lens(qreal distance, bool less, bool more) {
+    int l = static_cast<int>(less);
+    int m = static_cast<int>(more);
+    lens.set_focus(distance * (cone->r1()/(cone->r1() + detector.r() * (l - m))));
+}
 
 void MainWindow::build() {
     clear();
@@ -210,9 +215,9 @@ QPair<int, int> MainWindow::monte_carlo_method() {
 
 qreal MainWindow::optimal_length_cycle(int& max, int& optimal_value) {
     // For the first iteration the max and optimal value are initilized by zero
-    int low_limit = optimal_value == 0 || optimal_value - 9 < qCeil(cone->d1()) ? qCeil(cone->d1()) : optimal_value - 9;
-    int high_limit = optimal_value == 0 ? length_limit : optimal_value + 9;
-    int step = optimal_value == 0 ? 10 : 1;
+    int low_limit = optimal_value == 0 ? 2*qCeil(cone->d1()) : optimal_value - 4;
+    int high_limit = optimal_value == 0 ? length_limit : optimal_value + 4;
+    int step = optimal_value == 0 ? 5 : 1;
     QPair<int, int> result;
     QPair<int, int> max_result;
     int not_changing_count = 0;
@@ -221,25 +226,28 @@ qreal MainWindow::optimal_length_cycle(int& max, int& optimal_value) {
     // 2. It is the first iteration and the results did not improve for 150 mm (the value is arbitrary)
     // Increasing cone's length leads to increasing both the computation time and the loss value for non-zero beam bundles
     // so it's reasonable to cut the calculations short when the results become predictable
-    for (int i = low_limit; i <= high_limit && (step == 1 || not_changing_count < 15); i += step) {
+    for (int i = low_limit; i <= high_limit && (step == 1 || not_changing_count < 30); i += step) {
         qreal length = static_cast<qreal>(i);
         cone->set_length(length);
         detector.set_position(length);
-        lens.set_focus(detector.detector_z() * cone->r1() / (cone->r1() - detector.r()));
-        result = calculate_every_beam();
-        int current_value = result.first;
-        // Optimal length criteria:
-        // 1. Minimum loss (maximum number of beams passed) in exhaustive sampling
-        // 2. Acceptable loss value for parallel bundle at given angle
-        if ((current_value > max || (current_value == max && i <= optimal_value)) && loss(calculate_parallel_beams()) < loss_limit) {
-            max = current_value;
-            optimal_value = i;
-            max_result = result;
-            not_changing_count = 0;
+        init_lens(detector.detector_z(), ui->defocus_minus->isChecked(), ui->defocus_plus->isChecked());
+        // Optimal length criterion №1: Acceptable loss value for parallel bundle at given angle
+        if (loss(calculate_parallel_beams()) < loss_limit) {
+            result = calculate_every_beam();
+            int current_value = result.first;
+            // Optimal length criterion №2: Minimum loss (maximum number of beams passing) in exhaustive sampling
+            if (current_value > max || (current_value == max && i <= optimal_value)) {
+                max = current_value;
+                optimal_value = i;
+                max_result = result;
+                not_changing_count = 0;
+            } else {
+                ++not_changing_count;
+            }
+            qDebug() << i << current_value;
         } else {
-            ++not_changing_count;
+            qDebug() << "High loss value at " << i << " mm";
         }
-        qDebug() << i << current_value;
     }
     qDebug() << optimal_value << max;
     return loss(max_result);
