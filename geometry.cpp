@@ -69,7 +69,7 @@ Point Cone::intersection(const Beam& beam) const {
     // So this case should be fixed by setting 'd' to zero
     if (d < 0 && fabs(d) < 1e-8) d = 0;
     // If (a == 0) then the equation degenerates into linear equation
-    qreal t = qFabs(a) > 1e-8 ? (-b + qSqrt(d))/(2*a) : -c/b;
+    qreal t = qFabs(a) > 1e-9 ? (-b + qSqrt(d))/(2*a) : -c/b;
 //    qDebug() << a << b << c << d << t;
     Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;

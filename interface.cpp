@@ -39,14 +39,20 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->night_mode, SIGNAL(toggled(bool)), this, SLOT(set_colors(bool)));
     connect(ui->lens, SIGNAL(toggled(bool)), this, SLOT(set_lens(bool)));
 
-    connect(ui->defocus_plus, QOverload<bool>::of(&QAction::toggled), this, [&](bool def_plus){
-        if (def_plus == true) {
+    connect(ui->auto_focus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool auto_focus) {
+        ui->defocus_minus->setEnabled(auto_focus);
+        ui->defocus_plus->setEnabled(auto_focus);
+        ui->focal_length->setEnabled(!auto_focus);
+    });
+
+    connect(ui->defocus_plus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool def_plus) {
+        if (def_plus) {
             ui->defocus_minus->setChecked(false);
         }
     });
 
-    connect(ui->defocus_minus, QOverload<bool>::of(&QAction::toggled), this, [&](bool def_minus){
-        if (def_minus == true) {
+    connect(ui->defocus_minus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool def_minus) {
+        if (def_minus) {
             ui->defocus_plus->setChecked(false);
         }
     });
@@ -73,7 +79,6 @@ MainWindow::MainWindow(QWidget *parent)
         clear();
         // Rotation should be disabled until recalculation in new mode
         ui->rotation->setEnabled(false);
-
         bool point_coordinates_enabled = mode == SINGLE_BEAM_CALCULATION || mode == DIVERGENT_BUNDLE;
         ui->height->setEnabled(point_coordinates_enabled);
         ui->offset->setEnabled(point_coordinates_enabled);
@@ -89,6 +94,12 @@ MainWindow::MainWindow(QWidget *parent)
         ui->height->setMinimum(-new_diameter/2);
         ui->offset->setMaximum(new_diameter/2);
         ui->offset->setMinimum(-new_diameter/2);
+    });
+
+    ui->focal_length->setMinimum(ui->d_in->value());
+
+    connect(ui->length, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal length) {
+        ui->focal_length->setMaximum(length + 100);
     });
 
     ui->view->setScene(scene);
@@ -154,8 +165,7 @@ MainWindow::MainWindow(QWidget *parent)
     scene->addItem(origin_label_yoz);
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     delete ui;
 }
 
@@ -246,7 +256,9 @@ void MainWindow::set_colors(bool night_theme_on) {
 }
 
 void MainWindow::set_lens(bool visible) {
-    ui->defocusing->setEnabled(visible);
+    ui->auto_focus->setEnabled(visible);
+    ui->defocus_plus->setEnabled(visible);
+    ui->defocus_minus->setEnabled(visible);
     lens_yoz->setVisible(visible);
     lens_arrow_up_left->setVisible(visible);
     lens_arrow_up_right->setVisible(visible);
@@ -388,12 +400,26 @@ void MainWindow::show_results(QPair<int, int> result) {
 }
 
 void MainWindow::show_results(QPair<int, qreal> result) {
-    if (result.first != length_limit || qFabs(result.second - loss_limit) > 1e-6) {
-        ui->statusbar->showMessage("Оптимальная длина фокона составляет " + QString().setNum(result.first)
-                                   + " мм. Потери составляют " + QString().setNum(result.second) + " дБ.");
-    } else {
-        ui->statusbar->showMessage("Оптимального значения длины в пределах до " + QString().setNum(length_limit)
-                                   + " мм не найдено: потери для боковых пучков превышают "
-                                   + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
+    switch (ui->mode->currentIndex()) {
+    case LENGTH_OPTIMISATION:
+        if (result.first != length_limit || qFabs(result.second - loss_limit) > 1e-6) {
+            ui->statusbar->showMessage("Оптимальная длина фокона составляет " + QString().setNum(result.first)
+                                       + " мм. Потери составляют " + QString().setNum(result.second) + " дБ.");
+        } else {
+            ui->statusbar->showMessage("Оптимального значения длины в пределах до " + QString().setNum(length_limit)
+                                       + " мм не найдено: потери для боковых пучков превышают "
+                                       + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
+        }
+        break;
+    case FOCUS_OPTIMISATION:
+        if (result.first > 0) {
+            ui->statusbar->showMessage("Оптимальное фокусное расстояние составляет " + QString().setNum(result.first)
+                                           + " мм. Потери составляют " + QString().setNum(result.second) + " дБ.");
+        } else {
+            ui->statusbar->showMessage("Оптимального значения фокусного расстояния не найдено: потери для боковых пучков превышают "
+                                       + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
+        }
+        break;
     }
+
 }

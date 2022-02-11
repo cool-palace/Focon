@@ -27,7 +27,7 @@ constexpr qreal margin = 10;
 constexpr QPointF y_axis_label_offset = QPointF(-15,-10);
 constexpr QPointF x_axis_label_offset = QPointF(-5,-5);
 constexpr qreal loss_limit = 10;
-constexpr int length_limit = 700;
+constexpr int length_limit = 500;
 
 class MainWindow : public QMainWindow
 {
@@ -53,7 +53,10 @@ private:
         DIVERGENT_BUNDLE,
         EXHAUSTIVE_SAMPLING,
         MONTE_CARLO_METHOD,
-        LENGTH_OPTIMISATION
+        LENGTH_OPTIMISATION,
+        FOCUS_OPTIMISATION,
+        D2_OPTIMISATION,
+        COMPLEX_OPTIMISATION
     };
 
     // Basic objects
@@ -124,7 +127,7 @@ private slots:
 
     // Calculations
     void init_objects();
-    void init_lens(qreal distance, bool less, bool more);
+    qreal lens_focus(bool auto_focus);
     void build();
     BeamStatus calculate_single_beam_path();
     QPair<int, int> calculate_parallel_beams();
@@ -132,7 +135,7 @@ private slots:
     QPair<int, int> calculate_every_beam();
     QPair<int, int> monte_carlo_method();
     QPair<int, qreal> optimal_length();
-    qreal optimal_length_cycle(int& max, int& optimal_value);
+    QPair<int, qreal> optimal_focus();
     qreal loss(QPair<int, int>);
 
 };
