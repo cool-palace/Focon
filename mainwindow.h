@@ -55,7 +55,7 @@ private:
         MONTE_CARLO_METHOD,
         LENGTH_OPTIMISATION,
         FOCUS_OPTIMISATION,
-        D2_OPTIMISATION,
+        D_OUT_OPTIMISATION,
         COMPLEX_OPTIMISATION
     };
 
@@ -127,6 +127,7 @@ private slots:
 
     // Calculations
     void init_objects();
+    void init_cone(qreal d1, qreal d2, qreal length);
     qreal lens_focus(bool auto_focus);
     void build();
     BeamStatus calculate_single_beam_path();
@@ -136,6 +137,7 @@ private slots:
     QPair<int, int> monte_carlo_method();
     QPair<int, qreal> optimal_length();
     QPair<int, qreal> optimal_focus();
+    QPair<int, qreal> optimal_d_out();
     qreal loss(QPair<int, int>);
 
 };

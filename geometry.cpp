@@ -31,6 +31,8 @@ Beam Matrix::operator* (const Beam& b) {
 
 Tube::Tube(qreal D1, qreal l) : diameter_in(D1), length_(l) {}
 
+bool Tube::is_conic() { return dynamic_cast<Cone*>(this); }
+
 Cone::Cone(qreal D1, qreal D2, qreal l) : Tube(D1, l),
     diameter_out(D2) {}
 

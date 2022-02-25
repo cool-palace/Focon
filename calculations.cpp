@@ -5,16 +5,31 @@
 void MainWindow::init_objects() {
     // updating geometrical objects and detector
     start = Point(-ui->offset->value(), -ui->height->value(), 0);
-    if (cone != nullptr) delete cone;
-    cone = (qFabs(ui->d_in->value() - ui->d_out->value()) > 1e-6
-                ? new Cone(ui->d_in->value(), ui->d_out->value(), ui->length->value())
-                : new Tube(ui->d_in->value(), ui->length->value()));
+    init_cone(ui->d_in->value(), ui->d_out->value(), ui->length->value());
     beam = Beam(start, ui->angle->value());
     detector = Detector(ui->aperture->value(), ui->length->value(), ui->offset_det->value(),
                         ui->fov->value(), ui->d_det->value());
     qreal focus = lens_focus(ui->auto_focus->isChecked());
     lens.set_focus(focus);
     ui->focal_length->setValue(focus);
+}
+
+void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
+    bool different_diameters = qFabs(d1 - d2) > 1e-6;
+    bool type_change_needed = cone && different_diameters != cone->is_conic();
+    if (cone && type_change_needed) {
+        delete cone;
+        cone = nullptr;
+    }
+    if (!cone) {
+        cone = different_diameters
+                ? new Cone(d1, d2, length)
+                : new Tube(d1, length);
+    } else {
+        cone->set_d1(d1);
+        cone->set_d2(d2);
+        cone->set_length(length);
+    }
 }
 
 qreal MainWindow::lens_focus(bool auto_focus) {
@@ -61,6 +76,9 @@ void MainWindow::build() {
         if (ui->lens->isChecked()) {
             show_results(optimal_focus());
         } else ui->statusbar->showMessage("Для оптимизации линзы необходимо включить её в систему.");
+        break;
+    case D_OUT_OPTIMISATION:
+        show_results(optimal_d_out());
         break;
     default:
         break;
@@ -115,6 +133,9 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
         Beam transformed_beam = m*beam.unit(intersection);
         transformed_beam.reflect();
         beam = m.transponed()*transformed_beam;
+
+        // In complex modes there is no need to calculate full path of reflected beams
+        if (ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION && beam.cos_g() < 0) break;
     }
 
     BeamStatus status;
@@ -136,7 +157,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
 QPair<int, int> MainWindow::calculate_parallel_beams() {
     int beams_total = 0;
     int beams_passed = 0;
-    int count = /* cone->length() / cone->d2() >= 100 ? 20 : */ 50;
+    int count = ui->precision->currentIndex() ? 50 : 25;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
         for (int j = -count; j < count; ++j) {
@@ -166,7 +187,7 @@ QPair<int, int> MainWindow::calculate_parallel_beams() {
 QPair<int, int> MainWindow::calculate_divergent_beams() {
     int beams_total = 0;
     int beams_passed = 0;
-    int count = 10;
+    int count = ui->precision->currentIndex() ? 10 : 5;
     int limit = abs(static_cast<int>(ui->angle->value() * count));
     for (int i = -limit; i <= limit; ++i) {
         qreal angle = static_cast<qreal>(i) / count;
@@ -185,7 +206,7 @@ QPair<int, int> MainWindow::calculate_divergent_beams() {
 QPair<int, int> MainWindow::calculate_every_beam() {
     int beams_total = 0;
     int beams_passed = 0;
-    int count = 20;
+    int count = ui->precision->currentIndex() ? 25 : 20;
     for (int i = 0; i < count; ++i) {
         qreal x = i * cone->r1() / count;
         for (int j = 0; j < count; ++j) {
@@ -206,7 +227,7 @@ QPair<int, int> MainWindow::calculate_every_beam() {
 QPair<int, int> MainWindow::monte_carlo_method() {
     int beams_total = 0;
     int beams_passed = 0;
-    int count = 100000;
+    int count = ui->precision->currentIndex() ? 100000 : 10000;
     QRandomGenerator rng;
     for (int i = 0; i < count; ++i) {
         qreal x = 2 * rng.generateDouble() - 1;
@@ -279,8 +300,12 @@ QPair<int, qreal> MainWindow::optimal_length() {
 }
 
 QPair<int, qreal> MainWindow::optimal_focus() {
-    int low_limit = qFloor(detector.detector_z() * (cone->r1()/(cone->r1() + detector.r()))) / 2;
-    int high_limit = qCeil(detector.detector_z() * (cone->r1()/(cone->r1() - detector.r()))) * 2;
+    // The lower bound of focus length is determined by the f-number of the lens (k = f'/D_in >= 1).
+    // The upper bound corresponds to forming a beam parallel to the axis on the edge of the lens
+    // and is determined by the system's FOV (or input beam angle value) and cone's entrance diameter.
+    // Further increasing focus length is totally possible but seems to be pointless in our case.
+    int low_limit = qCeil(cone->d1());
+    int high_limit = qCeil(cone->r1()/qTan(qAcos(beam.cos_g())));
     int max = 0;
     int optimal_value = 0;
     QPair<int, int> result;
@@ -301,6 +326,32 @@ QPair<int, qreal> MainWindow::optimal_focus() {
         } else {
             qDebug() << "High loss value at " << focus << " mm";
         }
+    }
+    return qMakePair(optimal_value, loss(max_result));
+}
+
+QPair<int, qreal> MainWindow::optimal_d_out() {
+    int count = 2;
+    int start = qFloor(ui->d_det->value() * count);
+    int end = qCeil(ui->aperture->value()) * count;
+    qreal max = 0;
+    qreal optimal_value = 0;
+    QPair<int, int> result;
+    QPair<int, int> max_result;
+    bool decrease_started = false;
+    for (int i = start; i <= end || !decrease_started; ++i) {
+        qreal d_out = static_cast<qreal>(i) / count;
+        init_cone(cone->d1(), d_out, cone->length());
+        result = calculate_every_beam();
+        int current_value = result.first;
+        if (current_value > max) {
+            max = current_value;
+            optimal_value = d_out;
+            max_result = result;
+        } else {
+            decrease_started = true;
+        }
+        qDebug() << d_out << current_value;
     }
     return qMakePair(optimal_value, loss(max_result));
 }

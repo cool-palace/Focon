@@ -18,7 +18,8 @@ void MainWindow::save_settings() {
                               {"Lens", ui->lens->isChecked()},
                               {"Focal length", ui->focal_length->value()},
                               {"Auto focus", ui->auto_focus->isChecked()},
-                              {"Defocusing", ui->defocus_plus->isChecked() ? "plus" : ui->defocus_minus->isChecked() ? "minus" : "none"}
+                              {"Defocusing", ui->defocus_plus->isChecked() ? "plus" : ui->defocus_minus->isChecked() ? "minus" : "none"},
+                              {"Precision", ui->precision->currentIndex()}
                             };
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"),
                                                     QCoreApplication::applicationDirPath() + "//untitled.foc",
@@ -96,6 +97,9 @@ void MainWindow::load_settings() {
         auto def = json_file.value("Defocusing").toString();
         ui->defocus_plus->setChecked(def == "plus");
         ui->defocus_minus->setChecked(def == "minus");
+    }
+    if (json_file.contains("Precision")) {
+        ui->precision->setCurrentIndex(json_file.value("Precision").toInt());
     }
     ui->statusbar->showMessage("Настройки загружены");
 }

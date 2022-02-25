@@ -78,7 +78,9 @@ public:
     virtual qreal r2() const { return diameter_in/2; }
     virtual qreal phi() const { return 0; }
     virtual Point intersection(const Beam& beam) const;
-
+    virtual bool is_conic();
+    void set_d1(qreal d1) { diameter_in = d1; }
+    virtual void set_d2(qreal d2) { /* do nothing */ }
     void set_length(qreal new_length) { length_ = new_length; }
 };
 
@@ -97,6 +99,7 @@ public:
     qreal phi() const override { return qAtan(tan_phi()); }
     Point intersection(const Beam& beam) const override;
     Point vertex() const { return Point(0, 0, z_k()); }
+    void set_d2(qreal d2) override { diameter_out = d2; }
 };
 
 class Matrix {

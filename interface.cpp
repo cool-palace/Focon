@@ -75,10 +75,15 @@ MainWindow::MainWindow(QWidget *parent)
         ui->d_det->setValue(2);
     });
 
+    // The default presicion is high and the setting is disabled for single beam mode
+    ui->precision->setCurrentIndex(1);
+    ui->precision->setEnabled(ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION);
+
     connect(ui->mode, QOverload<int>::of(&QComboBox::currentIndexChanged), [&](int mode) {
         clear();
         // Rotation should be disabled until recalculation in new mode
         ui->rotation->setEnabled(false);
+        ui->precision->setEnabled(mode != SINGLE_BEAM_CALCULATION);
         bool point_coordinates_enabled = mode == SINGLE_BEAM_CALCULATION || mode == DIVERGENT_BUNDLE;
         ui->height->setEnabled(point_coordinates_enabled);
         ui->offset->setEnabled(point_coordinates_enabled);
@@ -420,6 +425,11 @@ void MainWindow::show_results(QPair<int, qreal> result) {
                                        + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
         }
         break;
+    case D_OUT_OPTIMISATION:
+        ui->statusbar->showMessage("Оптимальный выходной диаметр составляет " + QString().setNum(result.first)
+                                           + " мм. Потери составляют " + QString().setNum(result.second) + " дБ.");
+        break;
+    default:
+        break;
     }
-
 }
