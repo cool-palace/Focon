@@ -87,6 +87,12 @@ MainWindow::MainWindow(QWidget *parent)
         bool point_coordinates_enabled = mode == SINGLE_BEAM_CALCULATION || mode == DIVERGENT_BUNDLE;
         ui->height->setEnabled(point_coordinates_enabled);
         ui->offset->setEnabled(point_coordinates_enabled);
+        ui->length->setEnabled(mode != LENGTH_OPTIMISATION && mode != FULL_OPTIMISATION);
+        ui->d_out->setEnabled(mode != D_OUT_OPTIMISATION && mode != FULL_OPTIMISATION);
+        ui->focal_length->setEnabled(mode != FOCUS_OPTIMISATION && !ui->auto_focus->isChecked());
+        ui->auto_focus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
+        ui->defocus_plus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
+        ui->defocus_minus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
     });
 
     ui->height->setMaximum(ui->d_in->value()/2);
@@ -94,14 +100,24 @@ MainWindow::MainWindow(QWidget *parent)
     ui->offset->setMaximum(ui->d_in->value()/2);
     ui->offset->setMinimum(-ui->d_in->value()/2);
 
+    ui->focal_length->setMinimum(ui->d_in->value());
+
     connect(ui->d_in, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal new_diameter) {
         ui->height->setMaximum(new_diameter/2);
         ui->height->setMinimum(-new_diameter/2);
         ui->offset->setMaximum(new_diameter/2);
         ui->offset->setMinimum(-new_diameter/2);
+        qreal max = (new_diameter/2)/qTan(qDegreesToRadians(qFabs(qFabs(ui->angle->value()))));
+        qreal min = new_diameter;
+        ui->focal_length->setMaximum(min < max ? max : min);
+        ui->focal_length->setMinimum(min);
     });
 
-    ui->focal_length->setMinimum(ui->d_in->value());
+    connect(ui->angle, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal new_angle) {
+        qreal max = (ui->d_in->value()/2)/qTan(qDegreesToRadians(qFabs(new_angle)));
+        qreal min = ui->focal_length->minimum();
+        ui->focal_length->setMaximum(min < max ? max : min);
+    });
 
     connect(ui->length, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal length) {
         ui->focal_length->setMaximum(length + 100);
@@ -261,14 +277,15 @@ void MainWindow::set_colors(bool night_theme_on) {
 }
 
 void MainWindow::set_lens(bool visible) {
-    ui->auto_focus->setEnabled(visible);
-    ui->defocus_plus->setEnabled(visible);
-    ui->defocus_minus->setEnabled(visible);
     lens_yoz->setVisible(visible);
     lens_arrow_up_left->setVisible(visible);
     lens_arrow_up_right->setVisible(visible);
     lens_arrow_down_left->setVisible(visible);
     lens_arrow_down_right->setVisible(visible);
+    if (ui->mode->currentIndex() == FOCUS_OPTIMISATION) return;
+    ui->auto_focus->setEnabled(visible);
+    ui->defocus_plus->setEnabled(visible);
+    ui->defocus_minus->setEnabled(visible);
 }
 
 void MainWindow::clear() {
@@ -385,7 +402,7 @@ void MainWindow::rotate(int rotation_angle) {
     }
 }
 
-void MainWindow::show_results(QPair<int, int> result) {
+void MainWindow::show_results(const QPair<int, int>& result) {
     int beams_passed = result.first;
     int beams_total = result.second;
     QString passed = "Принято ";
@@ -404,7 +421,7 @@ void MainWindow::show_results(QPair<int, int> result) {
                                + ". Потери составляют " + QString().setNum(loss(result)) + " дБ.");
 }
 
-void MainWindow::show_results(QPair<int, qreal> result) {
+void MainWindow::show_results(const QPair<int, qreal>& result) {
     switch (ui->mode->currentIndex()) {
     case LENGTH_OPTIMISATION:
         if (result.first != length_limit || qFabs(result.second - loss_limit) > 1e-6) {
@@ -425,11 +442,35 @@ void MainWindow::show_results(QPair<int, qreal> result) {
                                        + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
         }
         break;
-    case D_OUT_OPTIMISATION:
-        ui->statusbar->showMessage("Оптимальный выходной диаметр составляет " + QString().setNum(result.first)
-                                           + " мм. Потери составляют " + QString().setNum(result.second) + " дБ.");
-        break;
     default:
         break;
+    }
+}
+
+void MainWindow::show_results(const QPair<qreal, qreal>& result) {
+    if (result.first > 0) {
+        ui->statusbar->showMessage("Оптимальный диаметр выходного окна оставляет " + QString().setNum(result.first)
+                                               + " мм. Потери составляют " + QString().setNum(result.second) + " дБ.");
+    } else {
+        ui->statusbar->showMessage("Оптимального значения диаметра выходного окна не найдено: потери для боковых пучков превышают "
+                                   + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
+    }
+}
+
+void MainWindow::show_results(const MainWindow::Parameters& result) {
+    if (result.length > 0) {
+        if (result.focus > 0) {
+            ui->statusbar->showMessage("Оптимальные параметры: длина = " + QString().setNum(result.length)
+                                       + " мм, выходной диаметр = " + QString().setNum(result.d_out)
+                                       + " мм, фокусное расстояние = " + QString().setNum(result.focus)
+                                       + " мм. Потери составляют " + QString().setNum(result.loss) + " дБ.");
+        } else {
+            ui->statusbar->showMessage("Оптимальные параметры: длина = " + QString().setNum(result.length)
+                                       + " мм, выходной диаметр = " + QString().setNum(result.d_out)
+                                       + " мм. Потери составляют " + QString().setNum(result.loss) + " дБ.");
+        }
+    } else {
+        ui->statusbar->showMessage("Оптимальной комбинации параметров не найдено: потери для боковых пучков превышают "
+                                   + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
     }
 }

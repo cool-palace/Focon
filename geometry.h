@@ -5,6 +5,10 @@
 #include <QLineF>
 #include <QTextStream>
 
+class beam_exception : std::exception {
+    const char* what() const noexcept override { return "Beam calculation error"; }
+};
+
 class Point {
 private:
     qreal x_, y_, z_;
@@ -123,6 +127,7 @@ public:
     qreal fov() const { return field_of_view; }
     qreal r() const { return diameter/2; }
     qreal window_radius() const { return aperture/2; }
+    qreal window_diameter() const { return aperture; }
     qreal window_z() const { return z_pos; }
     qreal detector_z() const { return z_pos + z_offset; }
 

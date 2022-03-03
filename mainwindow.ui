@@ -522,12 +522,17 @@
           </item>
           <item>
            <property name="text">
+            <string>Оптимизация выхода</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>Оптимизация линзы</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Оптимизация выхода</string>
+            <string>Полная оптимизация</string>
            </property>
           </item>
          </widget>

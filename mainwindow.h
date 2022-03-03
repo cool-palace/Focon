@@ -54,9 +54,19 @@ private:
         EXHAUSTIVE_SAMPLING,
         MONTE_CARLO_METHOD,
         LENGTH_OPTIMISATION,
-        FOCUS_OPTIMISATION,
         D_OUT_OPTIMISATION,
+        FOCUS_OPTIMISATION,
+        FULL_OPTIMISATION,
         COMPLEX_OPTIMISATION
+    };
+
+    struct Parameters {
+        int length = 0, focus = 0;
+        qreal d_out = 0, loss = 1e10;
+        Parameters() {}
+        Parameters(int length, qreal d_out, qreal loss) : length(length), d_out(d_out), loss(loss) {}
+        Parameters(int length, int focus, qreal d_out, qreal loss) : length(length), focus(focus), d_out(d_out), loss(loss) {}
+        Parameters(int focus, const Parameters& p) : length(p.length), focus(focus), d_out(p.d_out), loss(p.loss) {}
     };
 
     // Basic objects
@@ -116,8 +126,10 @@ private slots:
     void set_colors(bool night_theme_on);
     void set_lens(bool visible);
     void rotate(int rotation_angle);
-    void show_results(QPair<int, int>);
-    void show_results(QPair<int, qreal>);
+    void show_results(const QPair<int, int>&);
+    void show_results(const QPair<int, qreal>&);
+    void show_results(const QPair<qreal, qreal>&);
+    void show_results(const Parameters&);
 
     // Filesystem
     void save_settings();
@@ -131,14 +143,17 @@ private slots:
     qreal lens_focus(bool auto_focus);
     void build();
     BeamStatus calculate_single_beam_path();
-    QPair<int, int> calculate_parallel_beams();
+//    QPair<int, int> calculate_parallel_beams();
+    QPair<int, int> calculate_parallel_beams(qreal angle);
     QPair<int, int> calculate_divergent_beams();
     QPair<int, int> calculate_every_beam();
     QPair<int, int> monte_carlo_method();
     QPair<int, qreal> optimal_length();
     QPair<int, qreal> optimal_focus();
-    QPair<int, qreal> optimal_d_out();
-    qreal loss(QPair<int, int>);
+    QPair<qreal, qreal> optimal_d_out();
+    Parameters full_optimisation();
+    Parameters complex_optimisation(); //
+    qreal loss(const QPair<int, int>&);
 
 };
 #endif // MAINWINDOW_H
