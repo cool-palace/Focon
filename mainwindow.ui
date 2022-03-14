@@ -71,6 +71,22 @@
            <string>Параметры линзы</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_6">
+           <item row="6" column="0">
+            <widget class="QCheckBox" name="defocus_minus">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Дефокусировка -</string>
+             </property>
+            </widget>
+           </item>
            <item row="4" column="0">
             <widget class="QCheckBox" name="auto_focus">
              <property name="enabled">
@@ -101,6 +117,9 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="maximum">
+              <double>500.000000000000000</double>
+             </property>
              <property name="value">
               <double>50.000000000000000</double>
              </property>
@@ -119,11 +138,8 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0">
-            <widget class="QCheckBox" name="defocus_minus">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="lens">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                <horstretch>0</horstretch>
@@ -131,7 +147,14 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Дефокусировка -</string>
+              <string>Линза включена</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string/>
              </property>
             </widget>
            </item>
@@ -158,26 +181,6 @@
              </property>
              <property name="checked">
               <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QCheckBox" name="lens">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Линза включена</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string/>
              </property>
             </widget>
            </item>
@@ -612,6 +615,7 @@
      <string>Вид</string>
     </property>
     <addaction name="night_mode"/>
+    <addaction name="big_text"/>
    </widget>
    <widget class="QMenu" name="menu_4">
     <property name="title">
@@ -701,6 +705,14 @@
    </property>
    <property name="text">
     <string>Отрицательная</string>
+   </property>
+  </action>
+  <action name="big_text">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Большой шрифт</string>
    </property>
   </action>
  </widget>

@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->save_whole_image, SIGNAL(triggered(bool)), this, SLOT(save_image()));
     connect(ui->save_image_xoy, SIGNAL(triggered(bool)), this, SLOT(save_image_xoy()));
     connect(ui->night_mode, SIGNAL(toggled(bool)), this, SLOT(set_colors(bool)));
+    connect(ui->big_text, SIGNAL(toggled(bool)), this, SLOT(set_text_size(bool)));
     connect(ui->lens, SIGNAL(toggled(bool)), this, SLOT(set_lens(bool)));
 
     connect(ui->auto_focus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool auto_focus) {
@@ -107,16 +108,16 @@ MainWindow::MainWindow(QWidget *parent)
         ui->height->setMinimum(-new_diameter/2);
         ui->offset->setMaximum(new_diameter/2);
         ui->offset->setMinimum(-new_diameter/2);
-        qreal max = (new_diameter/2)/qTan(qDegreesToRadians(qFabs(qFabs(ui->angle->value()))));
+//        qreal max = (new_diameter/2)/qTan(qDegreesToRadians(qFabs(qFabs(ui->angle->value()))));
         qreal min = new_diameter;
-        ui->focal_length->setMaximum(min < max ? max : min);
+//        ui->focal_length->setMaximum(min < max ? max : min);
         ui->focal_length->setMinimum(min);
     });
 
     connect(ui->angle, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal new_angle) {
-        qreal max = (ui->d_in->value()/2)/qTan(qDegreesToRadians(qFabs(new_angle)));
-        qreal min = ui->focal_length->minimum();
-        ui->focal_length->setMaximum(min < max ? max : min);
+//        qreal max = (ui->d_in->value()/2)/qTan(qDegreesToRadians(qFabs(new_angle)));
+//        qreal min = ui->focal_length->minimum();
+//        ui->focal_length->setMaximum(min < max ? max : min);
     });
 
     connect(ui->length, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal length) {
@@ -274,6 +275,14 @@ void MainWindow::set_colors(bool night_theme_on) {
     y_label_xoy->setDefaultTextColor(color);
     origin_label_xoy->setDefaultTextColor(color);
     origin_label_yoz->setDefaultTextColor(color);
+}
+
+void MainWindow::set_text_size(bool big_font) {
+    auto font = QFont("MS Shell Dlg 2", big_font ? 12 : 8);
+    auto widgets = children();
+    for (auto& widget : widgets) {
+        widget->setProperty("font", font);
+    }
 }
 
 void MainWindow::set_lens(bool visible) {

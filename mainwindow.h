@@ -124,6 +124,7 @@ private slots:
     void set_beam_color(QGraphicsLineItem * beam, BeamStatus status);
     void init_graphics();
     void set_colors(bool night_theme_on);
+    void set_text_size(bool big_fonts);
     void set_lens(bool visible);
     void rotate(int rotation_angle);
     void show_results(const QPair<int, int>&);

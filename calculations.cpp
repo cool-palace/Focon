@@ -260,8 +260,8 @@ QPair<int, qreal> MainWindow::optimal_length() {
     QPair<int, int> max_result;
     // The optimisation is done in 2 iterations with increasing accuracy
     for (int iteration = 0; iteration < 2; ) {
-        int low_limit = iteration == 0 ? 2*qCeil(cone->d1()) : optimal_value - (first_step - 1);
-        int high_limit = iteration == 0 ? length_limit : optimal_value + (first_step - 1);
+        int low_limit = iteration == 0 ? qCeil(cone->d1()) : qMax(optimal_value - (first_step - 1), qCeil(cone->d1()));
+        int high_limit = iteration == 0 ? length_limit : qMin(optimal_value + (first_step - 1), length_limit);
         int step = iteration == 0 ? first_step : 1;
         int not_changing_count = 0;
         // Conditions for breaking the cycle:
