@@ -41,21 +41,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->lens, SIGNAL(toggled(bool)), this, SLOT(set_lens(bool)));
 
     connect(ui->auto_focus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool auto_focus) {
-        ui->defocus_minus->setEnabled(auto_focus);
-        ui->defocus_plus->setEnabled(auto_focus);
+//        ui->defocus_minus->setEnabled(auto_focus);
+//        ui->defocus_plus->setEnabled(auto_focus);
+        ui->defocus->setEnabled(auto_focus);
         ui->focal_length->setEnabled(!auto_focus);
-    });
-
-    connect(ui->defocus_plus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool def_plus) {
-        if (def_plus) {
-            ui->defocus_minus->setChecked(false);
-        }
-    });
-
-    connect(ui->defocus_minus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool def_minus) {
-        if (def_minus) {
-            ui->defocus_plus->setChecked(false);
-        }
     });
 
     connect(ui->Hamamatsu_G12180_005A, QOverload<bool>::of(&QAction::triggered), this, [&]() {
@@ -92,8 +81,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->d_out->setEnabled(mode != D_OUT_OPTIMISATION && mode != FULL_OPTIMISATION);
         ui->focal_length->setEnabled(mode != FOCUS_OPTIMISATION && !ui->auto_focus->isChecked());
         ui->auto_focus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
-        ui->defocus_plus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
-        ui->defocus_minus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
+        ui->defocus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked() && ui->auto_focus->isChecked());
     });
 
     ui->height->setMaximum(ui->d_in->value()/2);
@@ -293,8 +281,7 @@ void MainWindow::set_lens(bool visible) {
     lens_arrow_down_right->setVisible(visible);
     if (ui->mode->currentIndex() == FOCUS_OPTIMISATION) return;
     ui->auto_focus->setEnabled(visible);
-    ui->defocus_plus->setEnabled(visible);
-    ui->defocus_minus->setEnabled(visible);
+    ui->defocus->setEnabled(visible && ui->auto_focus->isChecked());
 }
 
 void MainWindow::clear() {

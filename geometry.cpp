@@ -21,11 +21,9 @@ Matrix Matrix::transponed() {
 }
 
 Beam Matrix::operator* (const Beam& b) {
-//    qDebug() << "dx =" << b.d_x() << "dy =" << b.d_y() << "dz =" << b.d_z();
     qreal dx = b.d_x()*a[0][0] + b.d_y()*a[0][1] + b.d_z()*a[0][2];
     qreal dy = b.d_x()*a[1][0] + b.d_y()*a[1][1] + b.d_z()*a[1][2];
     qreal dz = b.d_x()*a[2][0] + b.d_y()*a[2][1] + b.d_z()*a[2][2];
-//    qDebug() << "dx' =" << dx << "dy' =" << dy << "dz' =" << dz;
     return Beam(b.p1(), dx, dy, dz);
 }
 

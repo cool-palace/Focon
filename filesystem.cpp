@@ -18,7 +18,7 @@ void MainWindow::save_settings() {
                               {"Lens", ui->lens->isChecked()},
                               {"Focal length", ui->focal_length->value()},
                               {"Auto focus", ui->auto_focus->isChecked()},
-                              {"Defocusing", ui->defocus_plus->isChecked() ? "plus" : ui->defocus_minus->isChecked() ? "minus" : "none"},
+                              {"Defocus", ui->defocus->value()},
                               {"Precision", ui->precision->currentIndex()}
                             };
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"),
@@ -93,13 +93,15 @@ void MainWindow::load_settings() {
     if (json_file.contains("Auto focus")) {
         ui->auto_focus->setChecked(json_file.value("Auto focus").toBool());
     }
-    if (json_file.contains("Defocusing")) {
-        auto def = json_file.value("Defocusing").toString();
-        ui->defocus_plus->setChecked(def == "plus");
-        ui->defocus_minus->setChecked(def == "minus");
+    if (json_file.contains("Defocus")) {
+        ui->defocus->setValue(json_file.value("Defocus").toInt());
     }
     if (json_file.contains("Precision")) {
         ui->precision->setCurrentIndex(json_file.value("Precision").toInt());
+    }
+    if (json_file.contains("Defocusing")) { // This subfunction provides backwards compatibility with older save files
+        auto def = json_file.value("Defocusing").toString();
+        ui->defocus->setValue(def == "plus" ? 1 : def == "minus" ? -1 : 0);
     }
     ui->statusbar->showMessage("Настройки загружены");
 }

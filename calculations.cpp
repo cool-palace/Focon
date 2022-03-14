@@ -33,9 +33,7 @@ void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
 
 qreal MainWindow::lens_focus(bool auto_focus) {
     if (auto_focus) {
-        int l = static_cast<int>(ui->defocus_minus->isChecked());
-        int m = static_cast<int>(ui->defocus_plus->isChecked());
-        return detector.detector_z() * (cone->r1()/(cone->r1() + detector.r() * (l - m)));
+        return detector.detector_z() * (cone->r1()/(cone->r1() - detector.r() * ui->defocus->value()));
     } else return ui->focal_length->value();
 }
 
