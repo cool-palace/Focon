@@ -15,7 +15,579 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_4">
-    <item row="0" column="2">
+    <item row="6" column="0">
+     <widget class="QPushButton" name="calc">
+      <property name="text">
+       <string>Рассчитать</string>
+      </property>
+      <property name="checkable">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QDial" name="rotation">
+      <property name="maximum">
+       <number>360</number>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="focon_parameters">
+      <property name="title">
+       <string>Параметры фокона</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <property name="verticalSpacing">
+        <number>4</number>
+       </property>
+       <item row="5" column="0">
+        <widget class="QDoubleSpinBox" name="length">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimum">
+          <double>10.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>50.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QDoubleSpinBox" name="d_out">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimum">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="value">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_d_in">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Входной диаметр, мм</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QDoubleSpinBox" name="d_in">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="value">
+          <double>25.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_d_out">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Выходной диаметр, мм</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_length">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Длина фокона, мм</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QComboBox" name="mode">
+      <item>
+       <property name="text">
+        <string>Ход одного луча</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Параллельный пучок</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Расходящийся пучок</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Полный перебор</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Метод Монте-Карло</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Оптимизация длины</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Оптимизация выхода</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Оптимизация линзы</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Полная оптимизация</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QGroupBox" name="detector_parameters">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Параметры приёмника</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <property name="verticalSpacing">
+        <number>4</number>
+       </property>
+       <item row="7" column="0">
+        <widget class="QDoubleSpinBox" name="d_det">
+         <property name="value">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_aperture">
+         <property name="text">
+          <string>Входное окно, мм</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QDoubleSpinBox" name="fov">
+         <property name="maximum">
+          <double>90.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>45.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_d_det">
+         <property name="text">
+          <string>Диаметр, мм</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_fov">
+         <property name="text">
+          <string>Угловое поле, град.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_offset_det">
+         <property name="text">
+          <string>Смещение по оси Z, мм</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QDoubleSpinBox" name="aperture">
+         <property name="minimum">
+          <double>2.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>25.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QDoubleSpinBox" name="offset_det">
+         <property name="maximum">
+          <double>4.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QComboBox" name="precision">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>Средняя</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Повышенная</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QGroupBox" name="beam_parameters">
+      <property name="title">
+       <string>Параметры луча</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <property name="verticalSpacing">
+        <number>4</number>
+       </property>
+       <item row="5" column="0">
+        <widget class="QDoubleSpinBox" name="offset">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimum">
+          <double>-99.989999999999995</double>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_angle">
+         <property name="text">
+          <string>Угол входа, град.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QDoubleSpinBox" name="height">
+         <property name="minimum">
+          <double>-99.989999999999995</double>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QDoubleSpinBox" name="angle">
+         <property name="minimum">
+          <double>-90.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>90.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="value">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_offset">
+         <property name="text">
+          <string>Смещение по оси X, мм</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_height">
+         <property name="text">
+          <string>Смещение по оси Y, мм</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QLabel" name="label_precision">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Повышение точности увеличивает время вычислений&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="text">
+       <string>Точность</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_mode">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Режим</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QGroupBox" name="lens">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Параметры линзы</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_6">
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_focal_length">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Фок. расстояние, мм</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QCheckBox" name="auto_focus">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Автофокус</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QSlider" name="defocus">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimum">
+            <number>-1</number>
+           </property>
+           <property name="maximum">
+            <number>1</number>
+           </property>
+           <property name="pageStep">
+            <number>1</number>
+           </property>
+           <property name="value">
+            <number>1</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QDoubleSpinBox" name="focal_length">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximum">
+            <double>500.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>50.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>-</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>f'авт</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>+</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="ocular">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Параметры окуляра</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_ocular_focal_length">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Фок. расстояние, мм</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QDoubleSpinBox" name="ocular_focal_length">
+           <property name="minimum">
+            <double>-100.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>10.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="2" rowspan="6">
      <widget class="QGraphicsView" name="view">
       <property name="minimumSize">
        <size>
@@ -45,534 +617,18 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <layout class="QGridLayout" name="gridLayout_5">
-        <property name="verticalSpacing">
-         <number>4</number>
-        </property>
-        <item row="5" column="0">
-         <widget class="QLabel" name="label_rotation">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Поворот вида</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QGroupBox" name="lens_parameters">
-          <property name="title">
-           <string>Параметры линзы</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_6">
-           <item row="5" column="0">
-            <widget class="QCheckBox" name="auto_focus">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Автофокус</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="0">
-            <widget class="QDoubleSpinBox" name="focal_length">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="maximum">
-              <double>500.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>50.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="0">
-            <widget class="QLabel" name="label_focal_length">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Фок. расстояние, мм</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QCheckBox" name="lens">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Линза включена</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QSlider" name="defocus">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimum">
-              <number>-1</number>
-             </property>
-             <property name="maximum">
-              <number>1</number>
-             </property>
-             <property name="pageStep">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <number>1</number>
-             </property>
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QGroupBox" name="detector_parameters">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Параметры приёмника</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <property name="verticalSpacing">
-            <number>4</number>
-           </property>
-           <item row="7" column="0">
-            <widget class="QDoubleSpinBox" name="d_det">
-             <property name="value">
-              <double>5.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_aperture">
-             <property name="text">
-              <string>Входное окно, мм</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QDoubleSpinBox" name="fov">
-             <property name="maximum">
-              <double>90.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>45.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_d_det">
-             <property name="text">
-              <string>Диаметр, мм</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_fov">
-             <property name="text">
-              <string>Угловое поле, град.</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_offset_det">
-             <property name="text">
-              <string>Смещение по оси Z, мм</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QDoubleSpinBox" name="aperture">
-             <property name="minimum">
-              <double>2.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>25.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.100000000000000</double>
-             </property>
-             <property name="value">
-              <double>5.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QDoubleSpinBox" name="offset_det">
-             <property name="maximum">
-              <double>4.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.100000000000000</double>
-             </property>
-             <property name="value">
-              <double>0.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="7" column="0">
-         <widget class="QPushButton" name="calc">
-          <property name="text">
-           <string>Рассчитать</string>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QGroupBox" name="focon_parameters">
-          <property name="title">
-           <string>Параметры фокона</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_2">
-           <property name="verticalSpacing">
-            <number>4</number>
-           </property>
-           <item row="5" column="0">
-            <widget class="QDoubleSpinBox" name="length">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimum">
-              <double>10.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>1000.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>50.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QDoubleSpinBox" name="d_out">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimum">
-              <double>0.500000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>100.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.500000000000000</double>
-             </property>
-             <property name="value">
-              <double>5.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_d_in">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Входной диаметр, мм</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QDoubleSpinBox" name="d_in">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimum">
-              <double>1.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>100.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.500000000000000</double>
-             </property>
-             <property name="value">
-              <double>25.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_d_out">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Выходной диаметр, мм</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_length">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Длина фокона, мм</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QGroupBox" name="beam_parameters">
-          <property name="title">
-           <string>Параметры луча</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout">
-           <property name="verticalSpacing">
-            <number>4</number>
-           </property>
-           <item row="5" column="0">
-            <widget class="QDoubleSpinBox" name="offset">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimum">
-              <double>-99.989999999999995</double>
-             </property>
-             <property name="singleStep">
-              <double>0.500000000000000</double>
-             </property>
-             <property name="value">
-              <double>0.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_angle">
-             <property name="text">
-              <string>Угол входа, град.</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QDoubleSpinBox" name="height">
-             <property name="minimum">
-              <double>-99.989999999999995</double>
-             </property>
-             <property name="singleStep">
-              <double>0.500000000000000</double>
-             </property>
-             <property name="value">
-              <double>0.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QDoubleSpinBox" name="angle">
-             <property name="minimum">
-              <double>-90.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>90.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.500000000000000</double>
-             </property>
-             <property name="value">
-              <double>5.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_offset">
-             <property name="text">
-              <string>Смещение по оси X, мм</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_height">
-             <property name="text">
-              <string>Смещение по оси Y, мм</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QDial" name="rotation">
-          <property name="maximum">
-           <number>360</number>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QComboBox" name="mode">
-          <item>
-           <property name="text">
-            <string>Ход одного луча</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Параллельный пучок</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Расходящийся пучок</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Полный перебор</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Метод Монте-Карло</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Оптимизация длины</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Оптимизация выхода</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Оптимизация линзы</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Полная оптимизация</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_mode">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Режим</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QComboBox" name="precision">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <item>
-           <property name="text">
-            <string>Средняя</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Повышенная</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLabel" name="label_precision">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Повышение точности увеличивает время вычислений&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Точность</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-     </layout>
+    <item row="4" column="0">
+     <widget class="QLabel" name="label_rotation">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Поворот вида</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

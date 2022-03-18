@@ -22,6 +22,11 @@ MainWindow::MainWindow(QWidget *parent)
     , lens_arrow_up_right(new QGraphicsLineItem())
     , lens_arrow_down_left(new QGraphicsLineItem())
     , lens_arrow_down_right(new QGraphicsLineItem())
+    , ocular_yoz(new QGraphicsLineItem())
+    , ocular_arrow_up_left(new QGraphicsLineItem())
+    , ocular_arrow_up_right(new QGraphicsLineItem())
+    , ocular_arrow_down_left(new QGraphicsLineItem())
+    , ocular_arrow_down_right(new QGraphicsLineItem())
     , x_label_xoy(new QGraphicsTextItem("x"))
     , y_label_xoy(new QGraphicsTextItem("y"))
     , y_label_yoz(new QGraphicsTextItem("y"))
@@ -39,10 +44,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->night_mode, SIGNAL(toggled(bool)), this, SLOT(set_colors(bool)));
     connect(ui->big_text, SIGNAL(toggled(bool)), this, SLOT(set_text_size(bool)));
     connect(ui->lens, SIGNAL(toggled(bool)), this, SLOT(set_lens(bool)));
+    connect(ui->ocular, SIGNAL(toggled(bool)), this, SLOT(set_ocular(bool)));
+
+    connect(ui->ocular_focal_length, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal new_focus) {
+        // The range (-d_out/2, d_out/2) should not be accessible
+        if (qFabs(new_focus) < ui->d_out->value()/2) {
+            ui->ocular_focal_length->setValue(ui->d_out->value()/2 * (new_focus > 0 ? -1 : 1));
+        }
+    });
 
     connect(ui->auto_focus, QOverload<bool>::of(&QCheckBox::toggled), this, [&](bool auto_focus) {
-//        ui->defocus_minus->setEnabled(auto_focus);
-//        ui->defocus_plus->setEnabled(auto_focus);
         ui->defocus->setEnabled(auto_focus);
         ui->focal_length->setEnabled(!auto_focus);
     });
@@ -96,16 +107,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->height->setMinimum(-new_diameter/2);
         ui->offset->setMaximum(new_diameter/2);
         ui->offset->setMinimum(-new_diameter/2);
-//        qreal max = (new_diameter/2)/qTan(qDegreesToRadians(qFabs(qFabs(ui->angle->value()))));
-        qreal min = new_diameter;
-//        ui->focal_length->setMaximum(min < max ? max : min);
-        ui->focal_length->setMinimum(min);
-    });
-
-    connect(ui->angle, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal new_angle) {
-//        qreal max = (ui->d_in->value()/2)/qTan(qDegreesToRadians(qFabs(new_angle)));
-//        qreal min = ui->focal_length->minimum();
-//        ui->focal_length->setMaximum(min < max ? max : min);
+        ui->focal_length->setMinimum(new_diameter/2);
     });
 
     connect(ui->length, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal length) {
@@ -131,6 +133,12 @@ MainWindow::MainWindow(QWidget *parent)
     lens_arrow_down_left->setLine(0,0,-5,-10);
     lens_arrow_down_right->setLine(0,0,5,-10);
 
+    // setting ocular arrows
+    ocular_arrow_up_left->setLine(0,0,-5,10);
+    ocular_arrow_up_right->setLine(0,0,5,10);
+    ocular_arrow_down_left->setLine(0,0,-5,-10);
+    ocular_arrow_down_right->setLine(0,0,5,-10);
+
     // setting axes' labels
     x_label_xoy->setPos(x_axis_xoy->line().p2() + x_axis_label_offset);
     y_label_xoy->setPos(y_axis_xoy->line().p1() + y_axis_label_offset);
@@ -149,6 +157,7 @@ MainWindow::MainWindow(QWidget *parent)
     origin_label_yoz->setFont(font);
 
     set_lens(ui->lens->isChecked());
+    set_ocular(ui->ocular->isChecked());
     set_colors(ui->night_mode->isChecked());
 
     scene->addItem(y_axis);
@@ -167,6 +176,11 @@ MainWindow::MainWindow(QWidget *parent)
     scene->addItem(lens_arrow_up_right);
     scene->addItem(lens_arrow_down_left);
     scene->addItem(lens_arrow_down_right);
+    scene->addItem(ocular_yoz);
+    scene->addItem(ocular_arrow_up_left);
+    scene->addItem(ocular_arrow_up_right);
+    scene->addItem(ocular_arrow_down_left);
+    scene->addItem(ocular_arrow_down_right);
     scene->addItem(x_label_xoy);
     scene->addItem(y_label_xoy);
     scene->addItem(y_label_yoz);
@@ -222,13 +236,22 @@ void MainWindow::init_graphics() {
     window_down->setLine(z_end, x_axis_pos + cone->r2() * scale, z_end, x_axis_pos + detector.window_radius() * scale);
     detector_yoz->setLine(detector.detector_z() * scale, x_axis_pos + detector.r() * scale, detector.detector_z() * scale, x_axis_pos - detector.r() * scale);
 
-    // updating lens' representation
+    // updating lens representation
     QLineF line = QLineF(focon_up->line().p1(), focon_down->line().p1());
     lens_yoz->setLine(line);
     lens_arrow_up_left->setPos(focon_up->line().p1());
     lens_arrow_up_right->setPos(focon_up->line().p1());
     lens_arrow_down_left->setPos(focon_down->line().p1());
     lens_arrow_down_right->setPos(focon_down->line().p1());
+
+    // updating ocular representation
+    line = QLineF(focon_up->line().p2(), focon_down->line().p2());
+    ocular_yoz->setLine(line);
+    bool ocular_positive = ui->ocular_focal_length->value() > 0;
+    ocular_arrow_up_left->setPos((ocular_positive ? focon_up : focon_down)->line().p2());
+    ocular_arrow_up_right->setPos((ocular_positive ? focon_up : focon_down)->line().p2());
+    ocular_arrow_down_left->setPos((ocular_positive ? focon_down : focon_up)->line().p2());
+    ocular_arrow_down_right->setPos((ocular_positive ? focon_down : focon_up)->line().p2());
 }
 
 void MainWindow::set_colors(bool night_theme_on) {
@@ -254,6 +277,11 @@ void MainWindow::set_colors(bool night_theme_on) {
     lens_arrow_up_right->setPen(pen);
     lens_arrow_down_left->setPen(pen);
     lens_arrow_down_right->setPen(pen);
+    ocular_yoz->setPen(pen);
+    ocular_arrow_up_left->setPen(pen);
+    ocular_arrow_up_right->setPen(pen);
+    ocular_arrow_down_left->setPen(pen);
+    ocular_arrow_down_right->setPen(pen);
 
     x_label_xoy->setDefaultTextColor(color);
     y_label_xoy->setDefaultTextColor(color);
@@ -282,6 +310,14 @@ void MainWindow::set_lens(bool visible) {
     if (ui->mode->currentIndex() == FOCUS_OPTIMISATION) return;
     ui->auto_focus->setEnabled(visible);
     ui->defocus->setEnabled(visible && ui->auto_focus->isChecked());
+}
+
+void MainWindow::set_ocular(bool visible) {
+    ocular_yoz->setVisible(visible);
+    ocular_arrow_up_left->setVisible(visible);
+    ocular_arrow_up_right->setVisible(visible);
+    ocular_arrow_down_left->setVisible(visible);
+    ocular_arrow_down_right->setVisible(visible);
 }
 
 void MainWindow::clear() {

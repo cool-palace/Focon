@@ -11,6 +11,7 @@ void MainWindow::init_objects() {
     qreal focus = lens_focus(ui->auto_focus->isChecked());
     lens.set_focus(focus);
     ui->focal_length->setValue(focus);
+    ocular = Lens(ui->ocular_focal_length->value(), cone->length());
 }
 
 void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
@@ -51,7 +52,7 @@ void MainWindow::build() {
                 single_beam_status = calculate_single_beam_path();
                 draw(ui->rotation->value());
                 if (points.size() > 1) {
-                    ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size()-2));
+                    ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size() - 2 - static_cast<int>(ui->ocular->isChecked())));
                 }
             } else ui->statusbar->showMessage("Заданная точка входа луча находится вне апертуры.");
             break;
@@ -139,6 +140,26 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
         }
     } catch (beam_exception&) {
         throw starting_beam;
+    }
+
+    if (ui->ocular->isChecked() && beam.gamma() >= 0) {
+        Point ocular_intersection = Plane(ocular.z()).intersection(beam);
+        beam = Beam(ocular_intersection, beam.d_x(), beam.d_y(), beam.d_z());
+        beam = ocular.refracted(beam);
+        switch (ui->mode->currentIndex()) {
+        case SINGLE_BEAM_CALCULATION:
+            points.pop_back();
+            points.push_back(ocular_intersection);
+            points.push_back(cone->intersection(beam));
+            break;
+        case DIVERGENT_BUNDLE:
+            if (points.back().z() > cone->length()) {
+                points.back() = Plane(cone->length()).intersection(beam);
+            }
+            break;
+        default:
+            break;
+        }
     }
 
     BeamStatus status;
@@ -271,7 +292,13 @@ QPair<int, qreal> MainWindow::optimal_length() {
             qreal length = static_cast<qreal>(i);
             cone->set_length(length);
             detector.set_position(length);
-            lens.set_focus(lens_focus(ui->auto_focus->isChecked()));
+            if (ui->lens->isChecked()) {
+                qreal focus = lens_focus(ui->auto_focus->isChecked());
+                lens.set_focus(focus);
+            }
+            if (ui->ocular->isChecked()) {
+                ocular.set_position(length);
+            }
             // Optimal length criterion №1: Acceptable loss value for parallel bundle at given angle
             if (loss(calculate_parallel_beams(ui->angle->value())) < loss_limit) {
                 result = calculate_every_beam();
@@ -383,6 +410,9 @@ MainWindow::Parameters MainWindow::full_optimisation() {
             if (ui->lens->isChecked()) {
                 qreal focus = lens_focus(ui->auto_focus->isChecked());
                 lens.set_focus(focus);
+            }
+            if (ui->ocular->isChecked()) {
+                ocular.set_position(length);
             }
             auto result = optimal_d_out();
             qreal d_out = result.first;

@@ -75,6 +75,7 @@ private:
     Tube * cone = nullptr;
     Detector detector;
     Lens lens;
+    Lens ocular;
     Beam beam;
 
     // Calculation results
@@ -104,6 +105,11 @@ private:
     QGraphicsLineItem * lens_arrow_up_right;
     QGraphicsLineItem * lens_arrow_down_left;
     QGraphicsLineItem * lens_arrow_down_right;
+    QGraphicsLineItem * ocular_yoz;
+    QGraphicsLineItem * ocular_arrow_up_left;
+    QGraphicsLineItem * ocular_arrow_up_right;
+    QGraphicsLineItem * ocular_arrow_down_left;
+    QGraphicsLineItem * ocular_arrow_down_right;
 
     QGraphicsTextItem * x_label_xoy;
     QGraphicsTextItem * y_label_xoy;
@@ -126,6 +132,7 @@ private slots:
     void set_colors(bool night_theme_on);
     void set_text_size(bool big_fonts);
     void set_lens(bool visible);
+    void set_ocular(bool visible);
     void rotate(int rotation_angle);
     void show_results(const QPair<int, int>&);
     void show_results(const QPair<int, qreal>&);

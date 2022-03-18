@@ -34,6 +34,8 @@ bool Tube::is_conic() { return dynamic_cast<Cone*>(this); }
 Cone::Cone(qreal D1, qreal D2, qreal l) : Tube(D1, l),
     diameter_out(D2) {}
 
+Beam::Beam(Point p1, Point p2) : p(p1), dx(p2.x() - p1.x()), dy(p2.y() - p1.y()), dz(p2.z() - p1.z()) {}
+
 Beam Beam::unit(const Point& p) {
     return Beam(p, cos_a(), cos_b(), cos_g());
 }
@@ -99,6 +101,7 @@ Point Detector::intersection(const Beam &beam, qreal z) const {
 }
 
 Beam Lens::refracted(const Beam &beam) const {
-    Beam meridional = Beam(Point(), beam.d_x(), beam.d_y(), beam.d_z());
-    return Beam(beam.p1(), Plane(focus).intersection(meridional));
+    Beam meridional = Beam(center(), beam.d_x(), beam.d_y(), beam.d_z());
+    Point p2 = focal_plane().intersection(meridional);
+    return focus > 0 ? Beam(beam.p1(), p2) : Beam(p2, beam.p1()).unit(beam.p1());
 }

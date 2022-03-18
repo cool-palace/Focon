@@ -19,6 +19,8 @@ void MainWindow::save_settings() {
                               {"Focal length", ui->focal_length->value()},
                               {"Auto focus", ui->auto_focus->isChecked()},
                               {"Defocus", ui->defocus->value()},
+                              {"Ocular", ui->ocular->isChecked()},
+                              {"Ocular focal length", ui->ocular_focal_length->value()},
                               {"Precision", ui->precision->currentIndex()}
                             };
     QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить файл"),
@@ -95,6 +97,12 @@ void MainWindow::load_settings() {
     }
     if (json_file.contains("Defocus")) {
         ui->defocus->setValue(json_file.value("Defocus").toInt());
+    }
+    if (json_file.contains("Ocular")) {
+        ui->ocular->setChecked(json_file.value("Ocular").toBool());
+    }
+    if (json_file.contains("Ocular focal length")) {
+        ui->ocular_focal_length->setValue(json_file.value("Ocular focal length").toDouble());
     }
     if (json_file.contains("Precision")) {
         ui->precision->setCurrentIndex(json_file.value("Precision").toInt());

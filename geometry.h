@@ -31,10 +31,9 @@ private:
     qreal dx, dy, dz;
 public:
     Beam() : p(Point()), dx(0), dy(0), dz(0) {}
-    Beam(Point p, qreal angle)
-        : p(p), dx(0), dy(qSin(qDegreesToRadians(-angle))), dz(qCos(qDegreesToRadians(-angle))) {}
+    Beam(Point p, qreal angle) : p(p), dx(0), dy(qSin(qDegreesToRadians(-angle))), dz(qCos(qDegreesToRadians(-angle))) {}
     Beam(Point p, qreal dx, qreal dy, qreal dz) : p(p), dx(dx), dy(dy), dz(dz) {}
-    Beam(Point p1, Point p2) : p(p1), dx(p2.x() - p1.x()), dy(p2.y() - p1.y()), dz(p2.z() - p1.z()) {}
+    Beam(Point p1, Point p2);
 
     qreal length() const { return sqrt(dx*dx + dy*dy + dz*dz); }
 
@@ -142,14 +141,18 @@ public:
 
 class Lens {
 private:
-    qreal focus;
+    qreal focus, z_pos;
 
 public:
     Lens() = default;
-    Lens(qreal f) : focus(f) {}
+    Lens(qreal f, qreal z_pos = 0) : focus(f), z_pos(z_pos) {}
 
     qreal F() const { return 1.0/focus; }
+    qreal z() const { return z_pos; }
     void set_focus(qreal f) { focus = f; }
+    void set_position(qreal z) { z_pos = z; }
+    Point center() const { return Point(0, 0, z_pos); }
+    Plane focal_plane() const { return Plane(z_pos + focus); }
     Beam refracted(const Beam &beam) const;
 };
 
