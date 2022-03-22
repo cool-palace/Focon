@@ -20,6 +20,7 @@ public:
     qreal z() const { return z_; }
     Point x_pair() const { return Point(-x_, y_, z_); }
     bool operator==(const Point& p) { return x() == p.x() && y() == p.y() && z() == p.z(); }
+    bool operator!=(const Point& p) { return !(*this == p); }
     qreal r_sqr() const { return x()*x() + y()*y(); }
     qreal r() const { return qSqrt(r_sqr()); }
     bool is_in_radius(qreal radius) const { return r_sqr() < radius * radius; }
@@ -129,6 +130,7 @@ public:
     qreal window_diameter() const { return aperture; }
     qreal window_z() const { return z_pos; }
     qreal detector_z() const { return z_pos + z_offset; }
+    Plane plane() const { return Plane(detector_z()); }
 
     Point intersection(const Beam& beam, qreal z) const;
     bool hit(const Beam& beam) { return intersection(beam,window_z()).is_in_radius(window_radius())

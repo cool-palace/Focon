@@ -31,8 +31,7 @@ Tube::Tube(qreal D1, qreal l) : diameter_in(D1), length_(l) {}
 
 bool Tube::is_conic() { return dynamic_cast<Cone*>(this); }
 
-Cone::Cone(qreal D1, qreal D2, qreal l) : Tube(D1, l),
-    diameter_out(D2) {}
+Cone::Cone(qreal D1, qreal D2, qreal l) : Tube(D1, l), diameter_out(D2) {}
 
 Beam::Beam(Point p1, Point p2) : p(p1), dx(p2.x() - p1.x()), dy(p2.y() - p1.y()), dz(p2.z() - p1.z()) {}
 

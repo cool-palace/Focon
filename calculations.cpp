@@ -142,7 +142,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
         throw starting_beam;
     }
 
-    if (ui->ocular->isChecked() && beam.gamma() >= 0) {
+    if (ui->ocular->isChecked() && beam.cos_g() >= 0) {
         Point ocular_intersection = Plane(ocular.z()).intersection(beam);
         beam = Beam(ocular_intersection, beam.d_x(), beam.d_y(), beam.d_z());
         beam = ocular.refracted(beam);
@@ -171,10 +171,14 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
         }
     } else if (detector.missed(beam)) {
         status = MISSED;
-    } else if (detector.detected(beam)) {
-        status = DETECTED;
-    } else status = HIT;
-
+    } else {
+        status = detector.detected(beam) ? DETECTED : HIT;
+        // Cut the passed beams' tails at the detectors's plane
+        if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION
+            || (ui->mode->currentIndex() == DIVERGENT_BUNDLE && points.back().z() > cone->length())) {
+            points.back() = detector.plane().intersection(beam);
+        }
+    }
     return status;
 }
 

@@ -364,7 +364,6 @@ void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle)
                                      -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_xoy + diameter/2 + margin + margin);
             beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
             scene->addItem(beams_xoy.back());
-
             set_beam_color(beams_xoy.back(), status);
         } break;
         case DIVERGENT_BUNDLE: {
@@ -372,7 +371,6 @@ void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle)
                                  point.z()* scale, -(-point.y()*qCos(theta) + point.x()*qSin(theta))* scale + scene->height()/2);
             beams.push_back(new QGraphicsLineItem(line));
             scene->addItem(beams.back());
-
             set_beam_color(beams.back(), status);
         } break;
     }
