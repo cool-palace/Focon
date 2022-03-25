@@ -50,6 +50,7 @@ private:
     enum Mode {
         SINGLE_BEAM_CALCULATION,
         PARALLEL_BUNDLE,
+        PARALLEL_BUNDLE_EXIT,
         DIVERGENT_BUNDLE,
         EXHAUSTIVE_SAMPLING,
         MONTE_CARLO_METHOD,
@@ -81,11 +82,13 @@ private:
     // Calculation results
     qreal scale;
     qreal scale_xoy;
+    qreal scale_exit_xoy;
     BeamStatus single_beam_status;
     QVector<QGraphicsLineItem *> beams;
     QVector<QGraphicsLineItem *> beams_xoy;
     QVector<Point> points;
     QVector<BeamStatus> statuses;
+    QVector<qreal> beam_angles;
 
     // Graphic objects
     QGraphicsScene* scene;
@@ -125,9 +128,10 @@ private slots:
     void clear();
     void draw(int rotation_angle);
     void draw(const Point& p, BeamStatus status, int rotation_angle);
+    void draw(const Point& p, qreal beam_angle, int rotation_angle);
     void draw_axes(int rotation_angle);
-    void draw_axes(qreal theta);
     void set_beam_color(QGraphicsLineItem * beam, BeamStatus status);
+    void set_beam_color(QGraphicsLineItem * beam, qreal angle);
     void init_graphics();
     void set_colors(bool night_theme_on);
     void set_text_size(bool big_fonts);

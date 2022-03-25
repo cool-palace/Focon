@@ -42,6 +42,7 @@ void MainWindow::build() {
     clear();
     points.clear();
     statuses.clear();
+    beam_angles.clear();
     init_graphics();
     ui->rotation->setEnabled(ui->mode->currentIndex() < EXHAUSTIVE_SAMPLING);
 
@@ -57,9 +58,15 @@ void MainWindow::build() {
             } else ui->statusbar->showMessage("Заданная точка входа луча находится вне апертуры.");
             break;
         case PARALLEL_BUNDLE:
+            draw_axes(ui->rotation->value());
             show_results(calculate_parallel_beams(ui->angle->value()));
             break;
+        case PARALLEL_BUNDLE_EXIT:
+            draw_axes(ui->rotation->value());
+            calculate_parallel_beams(ui->angle->value());
+            break;
         case DIVERGENT_BUNDLE:
+            draw_axes(ui->rotation->value());
             show_results(calculate_divergent_beams());
             break;
         case EXHAUSTIVE_SAMPLING:
@@ -167,18 +174,26 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
         status = REFLECTED;
         // Cut the reflected beams' tails at the cone's entrance so the projections are cleaner
         if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION) {
-            points.back() = Plane(0).intersection(beam);
+            points.back() = cone->entrance().intersection(beam);
+        } else if (ui->mode->currentIndex() == PARALLEL_BUNDLE_EXIT) {
+            points.pop_back();
         }
-    } else if (detector.missed(beam)) {
-        status = MISSED;
     } else {
-        status = detector.detected(beam) ? DETECTED : HIT;
-        // Cut the passed beams' tails at the detectors's plane
-        if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION
-            || (ui->mode->currentIndex() == DIVERGENT_BUNDLE && points.back().z() > cone->length())) {
-            points.back() = detector.plane().intersection(beam);
+        if (ui->mode->currentIndex() == PARALLEL_BUNDLE_EXIT) {
+            points.back() = cone->exit().intersection(beam);
+        }
+        if (detector.missed(beam)) {
+            status = MISSED;
+        } else {
+            status = detector.detected(beam) ? DETECTED : HIT;
+            // Cut the passed beams' tails at the detectors's plane
+            if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION
+                || (ui->mode->currentIndex() == DIVERGENT_BUNDLE && points.back().z() > cone->length())) {
+                points.back() = detector.plane().intersection(beam);
+            }
         }
     }
+
     return status;
 }
 
@@ -196,14 +211,21 @@ QPair<int, int> MainWindow::calculate_parallel_beams(qreal angle) {
                 // The results are simmetrical relative to y axis, hence doubling total count for i > 0
                 beams_total += (i > 0 ? 2 : 1);
                 BeamStatus status = calculate_single_beam_path();
-                statuses.push_back(status);
                 if (status == DETECTED) {
                     beams_passed += (i > 0 ? 2 : 1);
                 }
                 if (ui->mode->currentIndex() == PARALLEL_BUNDLE) {
+                    statuses.push_back(status);
                     draw(points.back(), status, ui->rotation->value());
                     if (x > 0) {
                         draw(points.back().x_pair(), status, ui->rotation->value());
+                    }
+                } else if (ui->mode->currentIndex() == PARALLEL_BUNDLE_EXIT && status > REFLECTED) {
+                    qreal beam_angle = beam.gamma();
+                    beam_angles.push_back(beam_angle);
+                    draw(points.back(), beam_angle, ui->rotation->value());
+                    if (x > 0) {
+                        draw(points.back().x_pair(), beam_angle, ui->rotation->value());
                     }
                 }
             }

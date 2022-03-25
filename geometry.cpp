@@ -59,7 +59,7 @@ Point Tube::intersection(const Beam &beam) const {
 Point Cone::intersection(const Beam& beam) const {
     // Axial beam intersects the cone's vertex and passes
     if (qFabs(beam.d_y()) < 1e-6 && qFabs(beam.x()) < 1e-6 && qFabs(beam.y()) < 1e-6) {
-        return Point(0, 0, z_k() * (r1() > r2() ? 1 : -1));
+        return Point(0, 0, z_k() * (r1() > r2() ? 1 : -length()));
     }
     qreal a = pow(beam.cos_a(), 2) + pow(beam.cos_b(), 2) - pow(beam.cos_g()*tan_phi(), 2);
     qreal b = 2 * (beam.x() * beam.cos_a() + beam.y() * beam.cos_b() - (beam.z() - z_k()) * beam.cos_g() * pow(tan_phi(), 2));

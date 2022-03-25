@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     MainWindow window;
-    window.setWindowTitle("Модель фокона, версия 2.2");
+    window.setWindowTitle("Модель фокона, версия 2.3");
     window.show();
 
     return app.exec();

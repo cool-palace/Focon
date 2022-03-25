@@ -160,6 +160,11 @@
       </item>
       <item>
        <property name="text">
+        <string>Выход паралл. пучка</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
         <string>Расходящийся пучок</string>
        </property>
       </item>
@@ -775,8 +780,8 @@
      <y>703</y>
     </hint>
     <hint type="destinationlabel">
-     <x>6</x>
-     <y>338</y>
+     <x>3</x>
+     <y>340</y>
     </hint>
    </hints>
   </connection>

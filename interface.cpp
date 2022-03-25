@@ -93,6 +93,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->focal_length->setEnabled(mode != FOCUS_OPTIMISATION && !ui->auto_focus->isChecked());
         ui->auto_focus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
         ui->defocus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked() && ui->auto_focus->isChecked());
+        circle_out->setVisible(mode != PARALLEL_BUNDLE_EXIT);
     });
 
     ui->height->setMaximum(ui->d_in->value()/2);
@@ -215,6 +216,7 @@ void MainWindow::init_graphics() {
     qreal scale_based_on_diameter = y_axis_length / qMax(cone->d1(), cone->d2());
     scale = qMin(scale_based_on_length, scale_based_on_diameter);
     scale_xoy = diameter / qMax(cone->d1(), cone->d2());
+    scale_exit_xoy = diameter / cone->d2();
 
     // updating cone's xoy projection
     qreal diameter_outer = qMin(cone->d1(), cone->d2()) * scale_xoy;
@@ -350,8 +352,6 @@ void MainWindow::draw(int rotation_angle) {
         set_beam_color(beams[i], single_beam_status);
         set_beam_color(beams_xoy[i], single_beam_status);
     }
-    draw_axes(rotation_angle);
-    draw_axes(theta);
 }
 
 void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle) {
@@ -374,8 +374,17 @@ void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle)
             set_beam_color(beams.back(), status);
         } break;
     }
-    draw_axes(rotation_angle);
-    draw_axes(theta);
+}
+
+void MainWindow::draw(const Point& point, qreal beam_angle, int rotation_angle) {
+    qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
+    QLineF line_xoy = QLineF(-(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_exit_xoy + scene->width() - diameter/2 - margin,
+                             -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_exit_xoy + diameter/2 + margin + margin,
+                             -(point.x()*qCos(theta) + point.y()*qSin(theta))*scale_exit_xoy + scene->width() - diameter/2 - margin,
+                             -(point.x()*qSin(theta) - point.y()*qCos(theta))*scale_exit_xoy + diameter/2 + margin + margin);
+    beams_xoy.push_back(new QGraphicsLineItem(line_xoy));
+    scene->addItem(beams_xoy.back());
+    set_beam_color(beams_xoy.back(), beam_angle);
 }
 
 void MainWindow::draw_axes(int rotation_angle) {
@@ -383,9 +392,8 @@ void MainWindow::draw_axes(int rotation_angle) {
     y_axis_xoy->setRotation(rotation_angle);
     x_label_xoy->setRotation(rotation_angle);
     y_label_xoy->setRotation(rotation_angle);
-}
 
-void MainWindow::draw_axes(qreal theta) {
+    qreal theta = qDegreesToRadians(static_cast<qreal>(rotation_angle));
     qreal x_axis_pos = scene->height()/2;
     y_axis->setLine(0,x_axis_pos-x_axis_pos*qCos(theta),0,x_axis_pos+x_axis_pos*qCos(theta));
     y_label_yoz->setPos(y_axis->line().p1() + y_axis_label_offset);
@@ -410,8 +418,16 @@ void MainWindow::set_beam_color(QGraphicsLineItem * beam, BeamStatus status) {
     beam->setPen(pen);
 }
 
+void MainWindow::set_beam_color(QGraphicsLineItem * beam, qreal angle) {
+    int code = 225 - qFloor(qFabs(angle) * 225 / 90);
+    QPen pen;
+    pen.setColor(QColor(code, code, 255));
+    beam->setPen(pen);
+}
+
 void MainWindow::rotate(int rotation_angle) {
     clear();
+    draw_axes(rotation_angle);
     switch (ui->mode->currentIndex()) {
     case SINGLE_BEAM_CALCULATION:
         draw(rotation_angle);
@@ -421,6 +437,14 @@ void MainWindow::rotate(int rotation_angle) {
             draw(points[i], statuses[i], rotation_angle);
             if (qFabs(points[i].x()) > 1e-6) {
                 draw(points[i].x_pair(), statuses[i], rotation_angle);
+            }
+        }
+        break;
+    case PARALLEL_BUNDLE_EXIT:
+        for (int i = 0; i < points.size(); ++i) {
+            draw(points[i], beam_angles[i], rotation_angle);
+            if (qFabs(points[i].x()) > 1e-6) {
+                draw(points[i].x_pair(), beam_angles[i], rotation_angle);
             }
         }
         break;
