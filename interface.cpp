@@ -528,3 +528,7 @@ void MainWindow::show_results(const MainWindow::Parameters& result) {
                                    + QString().setNum(loss_limit) + " дБ. Попробуйте уменьшить входной угол пучка или увеличить допуск потерь.");
     }
 }
+
+void MainWindow::show_results(qreal result) {
+    ui->statusbar->showMessage("Средний выходной угол = " + QString().setNum(result) + " градусов.");
+}

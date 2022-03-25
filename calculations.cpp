@@ -64,6 +64,9 @@ void MainWindow::build() {
         case PARALLEL_BUNDLE_EXIT:
             draw_axes(ui->rotation->value());
             calculate_parallel_beams(ui->angle->value());
+            if (!beam_angles.empty()) {
+                show_results(mean_exit_angle());
+            } else ui->statusbar->showMessage("Ни один луч не достиг выходной апертуры.");
             break;
         case DIVERGENT_BUNDLE:
             draw_axes(ui->rotation->value());
@@ -486,3 +489,10 @@ qreal MainWindow::loss(const QPair<int, int>& result) {
     return 10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10);
 }
 
+qreal MainWindow::mean_exit_angle() const {
+    qreal result = 0;
+    for (const auto& angle : beam_angles) {
+        result += angle;
+    }
+    return result/beam_angles.size();
+}

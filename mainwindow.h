@@ -142,6 +142,7 @@ private slots:
     void show_results(const QPair<int, qreal>&);
     void show_results(const QPair<qreal, qreal>&);
     void show_results(const Parameters&);
+    void show_results(qreal mean_angle);
 
     // Filesystem
     void save_settings();
@@ -166,6 +167,7 @@ private slots:
     Parameters full_optimisation();
     Parameters complex_optimisation(); //
     qreal loss(const QPair<int, int>&);
+    qreal mean_exit_angle() const;
 
 };
 #endif // MAINWINDOW_H
