@@ -2,7 +2,6 @@
 #include "ui_mainwindow.h"
 
 void MainWindow::init_objects() {
-    // updating geometrical objects and detector
     start = Point(-ui->offset->value(), -ui->height->value(), 0);
     init_cone(ui->d_in->value(), ui->d_out->value(), ui->length->value());
     beam = Beam(start, ui->angle->value());
@@ -12,6 +11,7 @@ void MainWindow::init_objects() {
     lens.set_focus(focus);
     ui->focal_length->setValue(focus);
     ocular = Lens(ui->ocular_focal_length->value(), cone->length());
+    init_cavity(cone);
 }
 
 void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
@@ -30,12 +30,31 @@ void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
         cone->set_d2(d2);
         cone->set_length(length);
     }
+    if (ui->glass->isChecked()) {
+        cone->set_n(1.5);
+    }
 }
 
 qreal MainWindow::lens_focus(bool auto_focus) {
     if (auto_focus) {
         return detector.detector_z() * (cone->r1()/(cone->r1() - detector.r() * ui->defocus->value()));
     } else return ui->focal_length->value();
+}
+
+void MainWindow::init_cavity(Tube* glass_cone) {
+    bool cavity_is_needed = ui->glass->isChecked() && ui->cavity_length->value() > 0;
+    if (cavity_is_needed) {
+        qreal length = glass_cone->length() - ui->cavity_length->value();
+        qreal d1 = glass_cone->d2() * length / ui->cavity_length->value();
+        if (cavity) {
+            cavity->set_d1(d1);
+            cavity->set_d2(0);
+            cavity->set_length(length);
+        } else cavity = new Cone(d1, 0, length);
+    } else if (cavity) {
+        delete cavity;
+        cavity = nullptr;
+    }
 }
 
 void MainWindow::build() {
@@ -101,65 +120,84 @@ void MainWindow::build() {
     }
 }
 
-MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
-    points.push_back(start);
-    // Perpendicular beams cause infinite loop in tubes
-    if (qFabs(cone->r1() - cone->r2()) < 1e-6 && qFabs(beam.d_y()) > 0.999999) {
-        ui->statusbar->showMessage("Некорректный входной угол");
-        return REFLECTED;
-    }
-
-    auto starting_beam = beam;
+void MainWindow::transformation_on_entrance() {
     if (ui->lens->isChecked()) {
-        beam = lens.refracted(beam).unit(beam.p1());
+        beam = lens.refracted(beam);
+    } else if (ui->glass->isChecked()) {
+        beam = cone->entrance().refracted(beam, 1, 1.5);
     }
+}
 
-    try {
-        while(true) {
-            intersection = cone->intersection(beam);
-            switch (ui->mode->currentIndex()) {
-            case SINGLE_BEAM_CALCULATION:
-                // Points array forms complete beam path
-                points.push_back(intersection);
-                break;
-            case PARALLEL_BUNDLE:
-                // Points array contains possible entry points
-                break;
-            case DIVERGENT_BUNDLE:
-                // Points array contains first intersection points
-                if (points.back() == start) {
-                    points.back() = intersection;
-                }
-                break;
+void MainWindow::reflection_cycle() {
+    while(true) {
+        intersection = cone->intersection(beam);
+        switch (ui->mode->currentIndex()) {
+        case SINGLE_BEAM_CALCULATION:
+            // Points array forms complete beam path
+            points.push_back(intersection);
+            break;
+        case PARALLEL_BUNDLE:
+            // Points array contains possible entry points
+            break;
+        case DIVERGENT_BUNDLE:
+            // Points array contains first intersection points
+            if (points.back() == start) {
+                points.back() = intersection;
             }
-
-            // Transforming the beam after hitting a point outside of the cone is not necessary
-            if (intersection.z() < 0 || intersection.z() > cone->length()) break;
-
-            QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
-            qreal ksi = qDegreesToRadians(-90 + line.angle());
-            qreal phi = cone->phi();
-            Matrix m = Matrix(ksi, phi);
-
-            Beam transformed_beam = m*beam.unit(intersection);
-            transformed_beam.reflect();
-            beam = m.transponed()*transformed_beam;
-
-            // In complex modes there is no need to calculate full path of reflected beams
-            if (ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION && beam.cos_g() < 0) break;
+            break;
         }
-    } catch (beam_exception&) {
-        throw starting_beam;
-    }
 
-    if (ui->ocular->isChecked() && beam.cos_g() >= 0) {
-        Point ocular_intersection = Plane(ocular.z()).intersection(beam);
-        beam = Beam(ocular_intersection, beam.d_x(), beam.d_y(), beam.d_z());
-        beam = ocular.refracted(beam);
+        // Transforming the beam after hitting a point outside of the cone is not necessary
+        if (intersection.z() < 0 || intersection.z() > cone->length()) break;
+
+        QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
+        qreal ksi = qDegreesToRadians(-90 + line.angle());
+        qreal phi = cone->phi();
+        Matrix m = Matrix(ksi, phi);
+//            qDebug() << beam.d_x() << beam.d_y() << beam.d_z();
+        Beam transformed_beam = m*beam.on_point(intersection);
+//            qDebug() << transformed_beam;
+
+        line = QLineF(0, 0, transformed_beam.d_z(), transformed_beam.d_x());
+//            qDebug() << line.angle();
+        qreal theta = qDegreesToRadians(360 - line.angle());
+//            qDebug() << qRadiansToDegrees(theta);
+        Matrix m_y = Matrix(theta);
+        Matrix m_xzy = Matrix(ksi, phi, theta);
+        auto test_beam = m_y * transformed_beam;
+//            qDebug() << test_beam;
+
+        test_beam = m_xzy * beam.on_point(intersection);
+//            qDebug() << test_beam;
+
+        transformed_beam.reflect();
+        beam = m.transponed()*transformed_beam;
+
+        // In complex modes there is no need to calculate full path of reflected beams
+        if (ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION && beam.cos_g() < 0) break;
+    }
+}
+
+void MainWindow::transformation_on_exit() {
+    bool transformation_needed = beam.cos_g() >= 0 && (ui->glass->isChecked() || ui->ocular->isChecked());
+    if (transformation_needed) {
+        Point exit_intersection = cone->exit().intersection(beam);
+        beam = Beam(exit_intersection, beam.d_x(), beam.d_y(), beam.d_z());
+        beam = ui->ocular->isEnabled()
+                ? ocular.refracted(beam)
+                : cone->exit().refracted(beam, 1.5, 1);
         switch (ui->mode->currentIndex()) {
         case SINGLE_BEAM_CALCULATION:
             points.pop_back();
-            points.push_back(ocular_intersection);
+            points.push_back(exit_intersection);
+            if (beam.d_z() < 0) {
+                try {
+                    reflection_cycle();
+                } catch (beam_exception&) {
+                    throw beam;
+                }
+                transformation_on_exit();
+            } else break;
             points.push_back(cone->intersection(beam));
             break;
         case DIVERGENT_BUNDLE:
@@ -171,9 +209,27 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
             break;
         }
     }
+}
+
+MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
+    points.push_back(start);
+    // Perpendicular beams cause infinite loop in tubes
+    if (qFabs(cone->r1() - cone->r2()) < 1e-6 && qFabs(beam.d_y()) > 0.999999) {
+        ui->statusbar->showMessage("Некорректный входной угол");
+        return REFLECTED;
+    }
+
+    auto starting_beam = beam;
+    transformation_on_entrance();
+    try {
+        reflection_cycle();
+    } catch (beam_exception&) {
+        throw starting_beam;
+    }
+    transformation_on_exit();
 
     BeamStatus status;
-    if (intersection.z() < cone->length()) {
+    if (beam.d_z() < 0) {
         status = REFLECTED;
         // Cut the reflected beams' tails at the cone's entrance so the projections are cleaner
         if (ui->mode->currentIndex() == SINGLE_BEAM_CALCULATION) {
@@ -196,7 +252,6 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
             }
         }
     }
-
     return status;
 }
 

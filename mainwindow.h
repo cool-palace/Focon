@@ -74,6 +74,7 @@ private:
     Point start;
     Point intersection;
     Tube * cone = nullptr;
+    Cone * cavity = nullptr;
     Detector detector;
     Lens lens;
     Lens ocular;
@@ -121,6 +122,10 @@ private:
     QGraphicsTextItem * origin_label_xoy;
     QGraphicsTextItem * origin_label_yoz;
 
+    QGraphicsPolygonItem * polygon;
+    QBrush glass_brush_black = QBrush(QPixmap("F:\\Focon\\glass-black.png"));
+    QBrush glass_brush_white = QBrush(QPixmap("F:\\Focon\\glass-white.png"));
+
 private slots:
     // Interface
     void showEvent(QShowEvent * event) override;
@@ -137,6 +142,7 @@ private slots:
     void set_text_size(bool big_fonts);
     void set_lens(bool visible);
     void set_ocular(bool visible);
+    void set_glass(bool glass_on);
     void rotate(int rotation_angle);
     void show_results(const QPair<int, int>&);
     void show_results(const QPair<int, qreal>&);
@@ -154,9 +160,12 @@ private slots:
     void init_objects();
     void init_cone(qreal d1, qreal d2, qreal length);
     qreal lens_focus(bool auto_focus);
+    void init_cavity(Tube* glass_cone);
     void build();
+    void transformation_on_entrance();
+    void reflection_cycle();
+    void transformation_on_exit();
     BeamStatus calculate_single_beam_path();
-//    QPair<int, int> calculate_parallel_beams();
     QPair<int, int> calculate_parallel_beams(qreal angle);
     QPair<int, int> calculate_divergent_beams();
     QPair<int, int> calculate_every_beam();

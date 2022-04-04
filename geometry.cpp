@@ -1,7 +1,46 @@
 #include "geometry.h"
 #include <QDebug>
+#include <iomanip>
+
+QDebug& operator<<(QDebug debug, const Point& p) {
+    debug << "Point (" << QString().setNum(p.x_, 'f', 6) << ", "
+                       << QString().setNum(p.y_, 'f', 6) << ", "
+                       << QString().setNum(p.z_, 'f', 6) << ")\n";
+    return debug.noquote();
+}
+
+Vector::Vector(qreal x, qreal y, qreal z) {
+    qreal length = sqrt(x*x + y*y + z*z);
+    dx = x/length;
+    dy = y/length;
+    dz = z/length;
+}
+
+Vector::Vector(const Point& p1, const Point& p2) {
+    qreal x = p2.x() - p1.x();
+    qreal y = p2.y() - p1.y();
+    qreal z = p2.z() - p1.z();
+    qreal length = sqrt(x*x + y*y + z*z);
+    dx = x/length;
+    dy = y/length;
+    dz = z/length;
+}
+
+Matrix::Matrix(qreal theta) {
+    // Angle theta represents rotation around the Y axis
+    a[0][0] = qCos(theta);
+    a[0][1] = 0;
+    a[0][2] = -qSin(theta);
+    a[1][0] = 0;
+    a[1][1] = 1;
+    a[1][2] = 0;
+    a[2][0] = qSin(theta);
+    a[2][1] = 0;
+    a[2][2] = qCos(theta);
+}
 
 Matrix::Matrix(qreal ksi, qreal phi) {
+    // Angles ksi and phi represent rotation around Z and X axes respectively
     a[0][0] = qCos(ksi);
     a[0][1] = -qSin(ksi);
     a[0][2] = 0;
@@ -11,6 +50,19 @@ Matrix::Matrix(qreal ksi, qreal phi) {
     a[2][0] = qSin(ksi)*qSin(phi);
     a[2][1] = qCos(ksi)*qSin(phi);
     a[2][2] = qCos(phi);
+}
+
+Matrix::Matrix(qreal ksi, qreal phi, qreal theta) {
+    // Angles ksi, phi and theta represent rotation around Z, X and Y axes respectively
+    a[0][0] = qCos(ksi)*qCos(theta) - qSin(ksi)*qSin(phi)*qSin(theta);
+    a[0][1] = -qSin(ksi)*qCos(theta) - qCos(ksi)*qSin(phi)*qSin(theta);
+    a[0][2] = -qCos(phi)*qSin(theta);
+    a[1][0] = qSin(ksi)*qCos(phi);
+    a[1][1] = qCos(ksi)*qCos(phi);
+    a[1][2] = -qSin(phi);
+    a[2][0] = qSin(ksi)*qSin(phi)*qCos(theta) + qCos(ksi)*qSin(theta);
+    a[2][1] = qCos(ksi)*qSin(phi)*qCos(theta) - qSin(ksi)*qSin(theta);
+    a[2][2] = qCos(phi)*qCos(theta);
 }
 
 Matrix Matrix::transponed() {
@@ -27,20 +79,53 @@ Beam Matrix::operator* (const Beam& b) {
     return Beam(b.p1(), dx, dy, dz);
 }
 
-Tube::Tube(qreal D1, qreal l) : diameter_in(D1), length_(l) {}
+QDebug& operator<<(QDebug debug, const Matrix& m) {
+    debug << "Matrix (\t" << QString().setNum(m.a[0][0], 'f', 6) << ' '
+                          << QString().setNum(m.a[0][1], 'f', 6) << ' '
+                          << QString().setNum(m.a[0][2], 'f', 6) << "\n\t"
+                          << QString().setNum(m.a[1][0], 'f', 6) << ' '
+                          << QString().setNum(m.a[1][1], 'f', 6) << ' '
+                          << QString().setNum(m.a[1][2], 'f', 6) << "\n\t"
+                          << QString().setNum(m.a[2][0], 'f', 6) << ' '
+                          << QString().setNum(m.a[2][1], 'f', 6) << ' '
+                          << QString().setNum(m.a[2][2], 'f', 6) << ")\n";
+    return debug.noquote();
+}
 
 bool Tube::is_conic() { return dynamic_cast<Cone*>(this); }
 
-Cone::Cone(qreal D1, qreal D2, qreal l) : Tube(D1, l), diameter_out(D2) {}
-
-Beam::Beam(Point p1, Point p2) : p(p1), dx(p2.x() - p1.x()), dy(p2.y() - p1.y()), dz(p2.z() - p1.z()) {}
-
-Beam Beam::unit(const Point& p) {
-    return Beam(p, cos_a(), cos_b(), cos_g());
+QDebug& operator<<(QDebug debug, const Beam& b) {
+    debug << "Beam (" << b.p << "dx = " << QString().setNum(b.d_x(), 'f', 6) << ", "
+                             << "dy = " << QString().setNum(b.d_y(), 'f', 6) << ", "
+                             << "dz = " << QString().setNum(b.d_z(), 'f', 6) << "\n";
+    return debug.noquote();
 }
 
-void Beam::reflect() {
-    dy *= -1;
+Beam Tube::refracted(const Beam &beam) const {
+    qreal angle = qRadiansToDegrees(qAsin(beam.z() == 0
+                                          ? qSin(qDegreesToRadians(beam.gamma()))/n()
+                                          : qSin(qDegreesToRadians(beam.gamma()))*n()));
+    qDebug() << beam.gamma() << angle;
+//    QLineF line = QLineF(0, 0, beam.d_z(), beam.d_x());
+//    qreal theta = qDegreesToRadians(360 - line.angle());
+//    qDebug() << line << theta;
+//    Matrix m_y = Matrix(theta);
+//    Beam transformed_beam = m_y * beam;
+//    qDebug() << transformed_beam;
+
+//    line = QLineF(0, 0, beam.d_y(), beam.d_z());
+//    qDebug() << line << line.angle();
+
+//    qreal angle = qRadiansToDegrees(qAsin(beam.z() == 0
+//                                          ? qSin(qDegreesToRadians(line.angle()))/n()
+//                                          : qSin(qDegreesToRadians(line.angle()))*n()));
+//    line.setAngle(angle);
+//    qDebug() << line << angle;
+//    transformed_beam = Beam(beam.p1(), 0, line.dx(), line.dy());
+//    qDebug() << transformed_beam;
+//    qDebug() << m_y.transponed()*transformed_beam;
+//    return m_y.transponed()*transformed_beam;
+    return beam;
 }
 
 Point Tube::intersection(const Beam &beam) const {
@@ -70,6 +155,7 @@ Point Cone::intersection(const Beam& beam) const {
     // So this case should be fixed by setting 'd' to zero
     if (d < 0 && fabs(d) < 1e-8) d = 0;
     // If (a == 0) then the equation degenerates into linear equation
+//    qDebug() << (-b + qSqrt(d))/(2*a) << (-b - qSqrt(d))/(2*a);
     qreal t = qFabs(a) > 1e-9 ? (-b + qSqrt(d))/(2*a) : -c/b;
     if (qFabs(t) < 1e-8) throw beam_exception();
     Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
@@ -102,5 +188,17 @@ Point Detector::intersection(const Beam &beam, qreal z) const {
 Beam Lens::refracted(const Beam &beam) const {
     Beam meridional = Beam(center(), beam.d_x(), beam.d_y(), beam.d_z());
     Point p2 = focal_plane().intersection(meridional);
-    return focus > 0 ? Beam(beam.p1(), p2) : Beam(p2, beam.p1()).unit(beam.p1());
+    return focus > 0 ? Beam(beam.p1(), p2) : Beam(p2, beam.p1()).on_point(beam.p1());
+}
+
+Beam Plane::refracted(const Beam &beam, qreal n1, qreal n2) const {
+    qreal length_xy = sqrt(beam.d_x()*beam.d_x() + beam.d_y()*beam.d_y());
+    qreal sin_new_gamma = qSin(qAcos(beam.d_z()))*n1/n2;
+    if (sin_new_gamma > 1) {
+        return Beam(beam.p1(), Vector(beam.d_x(), beam.d_y(), -beam.d_z()));
+    }
+    qreal new_gamma = qAsin(sin_new_gamma);
+    qreal dx = beam.d_x() * qSin(new_gamma) / length_xy;
+    qreal dy = beam.d_y() * qSin(new_gamma) / length_xy;
+    return Beam(beam.p1(), Vector(dx, dy, qCos(new_gamma)));
 }

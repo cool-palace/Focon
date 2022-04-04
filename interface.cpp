@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
     , z_label_yoz(new QGraphicsTextItem("z"))
     , origin_label_xoy(new QGraphicsTextItem("0"))
     , origin_label_yoz(new QGraphicsTextItem("0"))
+    , polygon(new QGraphicsPolygonItem())
 
 {
     ui->setupUi(this);
@@ -45,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->big_text, SIGNAL(toggled(bool)), this, SLOT(set_text_size(bool)));
     connect(ui->lens, SIGNAL(toggled(bool)), this, SLOT(set_lens(bool)));
     connect(ui->ocular, SIGNAL(toggled(bool)), this, SLOT(set_ocular(bool)));
+    connect(ui->glass, SIGNAL(toggled(bool)), this, SLOT(set_glass(bool)));
 
     connect(ui->ocular_focal_length, QOverload<qreal>::of(&QDoubleSpinBox::valueChanged), [&](qreal new_focus) {
         // The range (-d_out/2, d_out/2) should not be accessible
@@ -94,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->auto_focus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked());
         ui->defocus->setEnabled(mode != FOCUS_OPTIMISATION && ui->lens->isChecked() && ui->auto_focus->isChecked());
         circle_out->setVisible(mode != PARALLEL_BUNDLE_EXIT);
+        ui->detector_parameters->setEnabled(mode != PARALLEL_BUNDLE_EXIT);
     });
 
     ui->height->setMaximum(ui->d_in->value()/2);
@@ -157,6 +160,8 @@ MainWindow::MainWindow(QWidget *parent)
     origin_label_xoy->setFont(font);
     origin_label_yoz->setFont(font);
 
+    polygon->setPen(QColor(0, 0, 0, 0));
+
     set_lens(ui->lens->isChecked());
     set_ocular(ui->ocular->isChecked());
     set_colors(ui->night_mode->isChecked());
@@ -188,6 +193,7 @@ MainWindow::MainWindow(QWidget *parent)
     scene->addItem(z_label_yoz);
     scene->addItem(origin_label_xoy);
     scene->addItem(origin_label_yoz);
+    scene->addItem(polygon);
 }
 
 MainWindow::~MainWindow() {
@@ -254,6 +260,8 @@ void MainWindow::init_graphics() {
     ocular_arrow_up_right->setPos((ocular_positive ? focon_up : focon_down)->line().p2());
     ocular_arrow_down_left->setPos((ocular_positive ? focon_down : focon_up)->line().p2());
     ocular_arrow_down_right->setPos((ocular_positive ? focon_down : focon_up)->line().p2());
+
+    set_glass(ui->glass->isChecked());
 }
 
 void MainWindow::set_colors(bool night_theme_on) {
@@ -284,6 +292,8 @@ void MainWindow::set_colors(bool night_theme_on) {
     ocular_arrow_up_right->setPen(pen);
     ocular_arrow_down_left->setPen(pen);
     ocular_arrow_down_right->setPen(pen);
+
+    set_glass(ui->glass->isChecked());
 
     x_label_xoy->setDefaultTextColor(color);
     y_label_xoy->setDefaultTextColor(color);
@@ -320,6 +330,21 @@ void MainWindow::set_ocular(bool visible) {
     ocular_arrow_up_right->setVisible(visible);
     ocular_arrow_down_left->setVisible(visible);
     ocular_arrow_down_right->setVisible(visible);
+}
+
+void MainWindow::set_glass(bool glass_on) {
+    QVector<QPointF> polygon_points = {focon_up->line().p1(), focon_up->line().p2(), focon_down->line().p2(), focon_down->line().p1()};
+//    auto polygon = new QGraphicsPolygonItem(QPolygonF(polygon_points));
+    polygon->setPolygon(QPolygonF(polygon_points));
+    polygon->setBrush(glass_on
+                      ? (ui->night_mode->isChecked() ? glass_brush_white : glass_brush_black)
+                      : QBrush());
+
+//    QPointF cavity_vertex = ((cone->length() - cavity.length()) * scale, scene->height()/2);
+    ui->lens->setDisabled(glass_on);
+    ui->ocular->setDisabled(glass_on);
+    lens_yoz->setVisible(glass_on);
+    ocular_yoz->setVisible(glass_on);
 }
 
 void MainWindow::clear() {
@@ -419,9 +444,9 @@ void MainWindow::set_beam_color(QGraphicsLineItem * beam, BeamStatus status) {
 }
 
 void MainWindow::set_beam_color(QGraphicsLineItem * beam, qreal angle) {
-    int code = 225 - qFloor(qFabs(angle) * 225 / 90);
+    int hue = 270 - qFloor(qFabs(angle)*3);
     QPen pen;
-    pen.setColor(QColor(code, code, 255));
+    pen.setColor(QColor::fromHsv(hue, 255, 255));
     beam->setPen(pen);
 }
 
