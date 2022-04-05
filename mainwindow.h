@@ -71,14 +71,14 @@ private:
     };
 
     // Basic objects
-    Point start;
+//    Point start;
     Point intersection;
     Tube * cone = nullptr;
     Cone * cavity = nullptr;
     Detector detector;
     Lens lens;
     Lens ocular;
-    Beam beam;
+//    Beam beam;
 
     // Calculation results
     qreal scale;
@@ -158,16 +158,18 @@ private slots:
 
     // Calculations
     void init_objects();
+    Point starting_point();
+    Beam starting_beam();
     void init_cone(qreal d1, qreal d2, qreal length);
     qreal lens_focus(bool auto_focus);
     void init_cavity(Tube* glass_cone);
     void build();
-    void transformation_on_entrance();
-    void reflection_cycle();
-    void transformation_on_exit();
-    BeamStatus calculate_single_beam_path();
+    void transformation_on_entrance(Beam& beam);
+    void reflection_cycle(Beam& beam, const Beam& original_beam);
+    void transformation_on_exit(Beam& beam, const Beam& original_beam);
+    BeamStatus calculate_single_beam_path(Beam& beam);
     QPair<int, int> calculate_parallel_beams(qreal angle);
-    QPair<int, int> calculate_divergent_beams();
+    QPair<int, int> calculate_divergent_beams(const Point& point);
     QPair<int, int> calculate_every_beam();
     QPair<int, int> monte_carlo_method();
     QPair<int, qreal> optimal_length();

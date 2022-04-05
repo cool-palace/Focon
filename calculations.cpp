@@ -2,9 +2,7 @@
 #include "ui_mainwindow.h"
 
 void MainWindow::init_objects() {
-    start = Point(-ui->offset->value(), -ui->height->value(), 0);
     init_cone(ui->d_in->value(), ui->d_out->value(), ui->length->value());
-    beam = Beam(start, ui->angle->value());
     detector = Detector(ui->aperture->value(), ui->length->value(), ui->offset_det->value(),
                         ui->fov->value(), ui->d_det->value());
     qreal focus = lens_focus(ui->auto_focus->isChecked());
@@ -13,6 +11,10 @@ void MainWindow::init_objects() {
     ocular = Lens(ui->ocular_focal_length->value(), cone->length());
     init_cavity(cone);
 }
+
+Point MainWindow::starting_point() { return Point(-ui->offset->value(), -ui->height->value(), 0); }
+
+Beam MainWindow::starting_beam() { return Beam(starting_point(), ui->angle->value()); }
 
 void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
     bool different_diameters = qFabs(d1 - d2) > 1e-6;
@@ -68,8 +70,9 @@ void MainWindow::build() {
     try {
         switch (ui->mode->currentIndex()) {
         case SINGLE_BEAM_CALCULATION:
-            if (start.is_in_radius(cone->r1())) {
-                single_beam_status = calculate_single_beam_path();
+            if (starting_point().is_in_radius(cone->r1())) {
+                Beam beam = starting_beam();
+                single_beam_status = calculate_single_beam_path(beam);
                 draw(ui->rotation->value());
                 if (points.size() > 1) {
                     ui->statusbar->showMessage("Количество отражений: " + QString().setNum(points.size() - 2 - static_cast<int>(ui->ocular->isChecked())));
@@ -89,7 +92,7 @@ void MainWindow::build() {
             break;
         case DIVERGENT_BUNDLE:
             draw_axes(ui->rotation->value());
-            show_results(calculate_divergent_beams());
+            show_results(calculate_divergent_beams(starting_point()));
             break;
         case EXHAUSTIVE_SAMPLING:
             show_results(calculate_every_beam());
@@ -120,7 +123,7 @@ void MainWindow::build() {
     }
 }
 
-void MainWindow::transformation_on_entrance() {
+void MainWindow::transformation_on_entrance(Beam& beam) {
     if (ui->lens->isChecked()) {
         beam = lens.refracted(beam);
     } else if (ui->glass->isChecked()) {
@@ -128,7 +131,7 @@ void MainWindow::transformation_on_entrance() {
     }
 }
 
-void MainWindow::reflection_cycle() {
+void MainWindow::reflection_cycle(Beam& beam, const Beam& original_beam) {
     while(true) {
         intersection = cone->intersection(beam);
         switch (ui->mode->currentIndex()) {
@@ -141,7 +144,7 @@ void MainWindow::reflection_cycle() {
             break;
         case DIVERGENT_BUNDLE:
             // Points array contains first intersection points
-            if (points.back() == start) {
+            if (points.back() == original_beam.p1()) {
                 points.back() = intersection;
             }
             break;
@@ -178,7 +181,7 @@ void MainWindow::reflection_cycle() {
     }
 }
 
-void MainWindow::transformation_on_exit() {
+void MainWindow::transformation_on_exit(Beam& beam, const Beam& original_beam) {
     bool transformation_needed = beam.cos_g() >= 0 && (ui->glass->isChecked() || ui->ocular->isChecked());
     if (transformation_needed) {
         Point exit_intersection = cone->exit().intersection(beam);
@@ -192,13 +195,12 @@ void MainWindow::transformation_on_exit() {
             points.push_back(exit_intersection);
             if (beam.d_z() < 0) {
                 try {
-                    reflection_cycle();
+                    reflection_cycle(beam, original_beam);
                 } catch (beam_exception&) {
-                    throw beam;
+                    throw original_beam;
                 }
-                transformation_on_exit();
-            } else break;
-            points.push_back(cone->intersection(beam));
+                transformation_on_exit(beam, original_beam);
+            } else points.push_back(cone->intersection(beam));
             break;
         case DIVERGENT_BUNDLE:
             if (points.back().z() > cone->length()) {
@@ -211,22 +213,23 @@ void MainWindow::transformation_on_exit() {
     }
 }
 
-MainWindow::BeamStatus MainWindow::calculate_single_beam_path() {
-    points.push_back(start);
+MainWindow::BeamStatus MainWindow::calculate_single_beam_path(Beam& beam) {
+    const auto original_beam = beam;
+    points.push_back(beam.p1());
+
     // Perpendicular beams cause infinite loop in tubes
-    if (qFabs(cone->r1() - cone->r2()) < 1e-6 && qFabs(beam.d_y()) > 0.999999) {
+    if (!cone->is_conic() && qFabs(beam.d_y()) > 0.999999) {
         ui->statusbar->showMessage("Некорректный входной угол");
         return REFLECTED;
     }
 
-    auto starting_beam = beam;
-    transformation_on_entrance();
+    transformation_on_entrance(beam);
     try {
-        reflection_cycle();
+        reflection_cycle(beam, original_beam);
     } catch (beam_exception&) {
-        throw starting_beam;
+        throw original_beam;
     }
-    transformation_on_exit();
+    transformation_on_exit(beam, original_beam);
 
     BeamStatus status;
     if (beam.d_z() < 0) {
@@ -263,12 +266,12 @@ QPair<int, int> MainWindow::calculate_parallel_beams(qreal angle) {
         qreal x = i * cone->r1() / count;
         for (int j = -count; j < count; ++j) {
             qreal y = j * cone->r1() / count;
-            start = Point(-x, -y, 0);
+            Point start = Point(-x, -y, 0);
             if (start.is_in_radius(cone->r1())) {
-                beam = Beam(start, angle);
+                Beam beam = Beam(start, angle);
                 // The results are simmetrical relative to y axis, hence doubling total count for i > 0
                 beams_total += (i > 0 ? 2 : 1);
-                BeamStatus status = calculate_single_beam_path();
+                BeamStatus status = calculate_single_beam_path(beam);
                 if (status == DETECTED) {
                     beams_passed += (i > 0 ? 2 : 1);
                 }
@@ -292,16 +295,16 @@ QPair<int, int> MainWindow::calculate_parallel_beams(qreal angle) {
     return qMakePair(beams_passed, beams_total);
 }
 
-QPair<int, int> MainWindow::calculate_divergent_beams() {
+QPair<int, int> MainWindow::calculate_divergent_beams(const Point& start) {
     int beams_total = 0;
     int beams_passed = 0;
     int count = ui->precision->currentIndex() ? 10 : 5;
     int limit = abs(static_cast<int>(ui->angle->value() * count));
     for (int i = -limit; i <= limit; ++i) {
         qreal angle = static_cast<qreal>(i) / count;
-        beam = Beam(start, angle);
+        Beam beam = Beam(start, angle);
         ++beams_total;
-        BeamStatus status = calculate_single_beam_path();
+        BeamStatus status = calculate_single_beam_path(beam);
         statuses.push_back(status);
         if (status == DETECTED) {
             ++beams_passed;
@@ -319,9 +322,9 @@ QPair<int, int> MainWindow::calculate_every_beam() {
         qreal x = i * cone->r1() / count;
         for (int j = 0; j < count; ++j) {
             qreal y = j * cone->r1() / count;
-            start = Point(-x, -y, 0);
+            Point start = Point(-x, -y, 0);
             if (start.is_in_radius(cone->r1())) {
-                QPair<int, int> current_result = calculate_divergent_beams();
+                QPair<int, int> current_result = calculate_divergent_beams(start);
                 // The results are simmetrical relative to y axis, hence doubling count for i > 0
                 // The results are also simmetrical relative to x axis due to divergent beam modelling method used
                 beams_passed += (i > 0 ? 2 : 1) * (j > 0 ? 2 : 1) * current_result.first;
@@ -340,11 +343,11 @@ QPair<int, int> MainWindow::monte_carlo_method() {
     for (int i = 0; i < count; ++i) {
         qreal x = 2 * rng.generateDouble() - 1;
         qreal y = 2 * rng.generateDouble() - 1;
-        start = Point(x * cone->r1(), y * cone->r1(), 0);
+        Point start = Point(x * cone->r1(), y * cone->r1(), 0);
         if (start.is_in_radius(cone->r1())) {
-            beam = Beam(start, (2 * rng.generateDouble() - 1) * fabs(ui->angle->value()));
+            Beam beam = Beam(start, (2 * rng.generateDouble() - 1) * fabs(ui->angle->value()));
             ++beams_total;
-            BeamStatus status = calculate_single_beam_path();
+            BeamStatus status = calculate_single_beam_path(beam);
             if (status == DETECTED) {
                 ++beams_passed;
             }

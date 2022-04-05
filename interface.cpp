@@ -392,6 +392,7 @@ void MainWindow::draw(const Point& point, BeamStatus status, int rotation_angle)
             set_beam_color(beams_xoy.back(), status);
         } break;
         case DIVERGENT_BUNDLE: {
+            auto start = starting_point();
             QLineF line = QLineF(start.z() * scale, -(-start.y()*qCos(theta) + start.x()*qSin(theta)) * scale + scene->height()/2,
                                  point.z()* scale, -(-point.y()*qCos(theta) + point.x()*qSin(theta))* scale + scene->height()/2);
             beams.push_back(new QGraphicsLineItem(line));
