@@ -165,6 +165,7 @@ MainWindow::MainWindow(QWidget *parent)
     set_lens(ui->lens->isChecked());
     set_ocular(ui->ocular->isChecked());
     set_colors(ui->night_mode->isChecked());
+    polygon->hide();
 
     scene->addItem(y_axis);
     scene->addItem(z_axis);
@@ -294,6 +295,7 @@ void MainWindow::set_colors(bool night_theme_on) {
     ocular_arrow_down_right->setPen(pen);
 
     set_glass(ui->glass->isChecked());
+    polygon->setPen(pen);
 
     x_label_xoy->setDefaultTextColor(color);
     y_label_xoy->setDefaultTextColor(color);
@@ -333,7 +335,12 @@ void MainWindow::set_ocular(bool visible) {
 }
 
 void MainWindow::set_glass(bool glass_on) {
-    QVector<QPointF> polygon_points = {focon_up->line().p1(), focon_up->line().p2(), focon_down->line().p2(), focon_down->line().p1()};
+    QVector<QPointF> polygon_points = {focon_up->line().p2(), focon_up->line().p1(), focon_down->line().p1(), focon_down->line().p2()};
+    if (cavity) {
+        QPointF cavity_vertex((cavity->z_k()) * scale, scene->height()/2);
+        polygon_points.push_back(cavity_vertex);
+    }
+
 //    auto polygon = new QGraphicsPolygonItem(QPolygonF(polygon_points));
     polygon->setPolygon(QPolygonF(polygon_points));
     polygon->setBrush(glass_on
@@ -343,8 +350,11 @@ void MainWindow::set_glass(bool glass_on) {
 //    QPointF cavity_vertex = ((cone->length() - cavity.length()) * scale, scene->height()/2);
     ui->lens->setDisabled(glass_on);
     ui->ocular->setDisabled(glass_on);
-    lens_yoz->setVisible(glass_on);
-    ocular_yoz->setVisible(glass_on);
+    focon_up->setVisible(!glass_on);
+    focon_down->setVisible(!glass_on);
+    polygon->setVisible(glass_on);
+//    lens_yoz->setVisible(glass_on);
+//    ocular_yoz->setVisible(glass_on);
 }
 
 void MainWindow::clear() {

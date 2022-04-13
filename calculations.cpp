@@ -46,13 +46,14 @@ qreal MainWindow::lens_focus(bool auto_focus) {
 void MainWindow::init_cavity(Tube* glass_cone) {
     bool cavity_is_needed = ui->glass->isChecked() && ui->cavity_length->value() > 0;
     if (cavity_is_needed) {
-        qreal length = glass_cone->length() - ui->cavity_length->value();
-        qreal d1 = glass_cone->d2() * length / ui->cavity_length->value();
+        qreal z = glass_cone->length() - ui->cavity_length->value();
         if (cavity) {
-            cavity->set_d1(d1);
-            cavity->set_d2(0);
-            cavity->set_length(length);
-        } else cavity = new Cone(d1, 0, length);
+            *cavity = Cone(1,1,1);
+            cavity->set_d1(0);
+            cavity->set_d2(cone->d2());
+            cavity->set_length(ui->cavity_length->value());
+            cavity->set_z(z);
+        } else cavity = new Cone(0, cone->d2(), ui->cavity_length->value(), z);
     } else if (cavity) {
         delete cavity;
         cavity = nullptr;
@@ -133,7 +134,26 @@ void MainWindow::transformation_on_entrance(Beam& beam) {
 
 void MainWindow::reflection_cycle(Beam& beam, const Beam& original_beam) {
     while(true) {
+//        qDebug() << beam;
         intersection = cone->intersection(beam);
+//        qDebug() << "cone inter" << intersection;
+
+        bool hit_cavity = false;
+        if (cavity) {
+            Point cavity_intersection = cavity->intersection(beam);
+//            qDebug() << "cavity inter 1" << cavity_intersection;
+
+            if (cavity_intersection.z() > cavity->z_k()
+                    && cavity_intersection.z() < cone->length()
+                    && ((beam.d_z() > 0 && cavity_intersection.z() < intersection.z() && cavity_intersection.z() > beam.z())
+                        || (beam.d_z() <= 0 && cavity_intersection.z() > intersection.z() && cavity_intersection.z() < beam.z()))) {
+//                qDebug() << "cavity hit";
+                hit_cavity = true;
+                intersection = cavity_intersection;
+//                qDebug() << intersection;
+            }
+        }
+
         switch (ui->mode->currentIndex()) {
         case SINGLE_BEAM_CALCULATION:
             // Points array forms complete beam path
@@ -155,25 +175,19 @@ void MainWindow::reflection_cycle(Beam& beam, const Beam& original_beam) {
 
         QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
         qreal ksi = qDegreesToRadians(-90 + line.angle());
-        qreal phi = cone->phi();
+        qreal phi = (hit_cavity ? cavity : cone)->phi();
         Matrix m = Matrix(ksi, phi);
-//            qDebug() << beam.d_x() << beam.d_y() << beam.d_z();
         Beam transformed_beam = m*beam.on_point(intersection);
-//            qDebug() << transformed_beam;
+//        qDebug() << transformed_beam;
 
-        line = QLineF(0, 0, transformed_beam.d_z(), transformed_beam.d_x());
-//            qDebug() << line.angle();
-        qreal theta = qDegreesToRadians(360 - line.angle());
-//            qDebug() << qRadiansToDegrees(theta);
-        Matrix m_y = Matrix(theta);
-        Matrix m_xzy = Matrix(ksi, phi, theta);
-        auto test_beam = m_y * transformed_beam;
-//            qDebug() << test_beam;
+        if (hit_cavity) {
+            transformed_beam = cavity->refracted(transformed_beam);
+        } else {
+            transformed_beam.reflect();
+        }
 
-        test_beam = m_xzy * beam.on_point(intersection);
-//            qDebug() << test_beam;
+//        qDebug() << transformed_beam;
 
-        transformed_beam.reflect();
         beam = m.transponed()*transformed_beam;
 
         // In complex modes there is no need to calculate full path of reflected beams
@@ -182,7 +196,9 @@ void MainWindow::reflection_cycle(Beam& beam, const Beam& original_beam) {
 }
 
 void MainWindow::transformation_on_exit(Beam& beam, const Beam& original_beam) {
-    bool transformation_needed = beam.cos_g() >= 0 && (ui->glass->isChecked() || ui->ocular->isChecked());
+    bool simple_glass_cone = ui->glass->isChecked() && !cavity;
+    bool axial_beam = beam.d_y() < 1e-6 && beam.x() < 1e-6 && beam.y() < 1e-6;
+    bool transformation_needed = beam.cos_g() >= 0 && (simple_glass_cone || ui->ocular->isChecked() || axial_beam);
     if (transformation_needed) {
         Point exit_intersection = cone->exit().intersection(beam);
         beam = Beam(exit_intersection, beam.d_x(), beam.d_y(), beam.d_z());

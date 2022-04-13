@@ -101,31 +101,27 @@ QDebug& operator<<(QDebug debug, const Beam& b) {
     return debug.noquote();
 }
 
+Beam Tube::reflected(const Beam& beam, const Point& intersection) const {
+    QLineF line = QLineF(0, 0, intersection.x(), intersection.y());
+    qreal ksi = qDegreesToRadians(-90 + line.angle());
+    qreal phi = this->phi();
+    Matrix m = Matrix(ksi, phi);
+    Beam transformed_beam = m*beam.on_point(intersection);
+    transformed_beam.reflect();
+    return m.transponed()*transformed_beam;
+}
+
 Beam Tube::refracted(const Beam &beam) const {
-    qreal angle = qRadiansToDegrees(qAsin(beam.z() == 0
-                                          ? qSin(qDegreesToRadians(beam.gamma()))/n()
-                                          : qSin(qDegreesToRadians(beam.gamma()))*n()));
-    qDebug() << beam.gamma() << angle;
-//    QLineF line = QLineF(0, 0, beam.d_z(), beam.d_x());
-//    qreal theta = qDegreesToRadians(360 - line.angle());
-//    qDebug() << line << theta;
-//    Matrix m_y = Matrix(theta);
-//    Beam transformed_beam = m_y * beam;
-//    qDebug() << transformed_beam;
-
-//    line = QLineF(0, 0, beam.d_y(), beam.d_z());
-//    qDebug() << line << line.angle();
-
-//    qreal angle = qRadiansToDegrees(qAsin(beam.z() == 0
-//                                          ? qSin(qDegreesToRadians(line.angle()))/n()
-//                                          : qSin(qDegreesToRadians(line.angle()))*n()));
-//    line.setAngle(angle);
-//    qDebug() << line << angle;
-//    transformed_beam = Beam(beam.p1(), 0, line.dx(), line.dy());
-//    qDebug() << transformed_beam;
-//    qDebug() << m_y.transponed()*transformed_beam;
-//    return m_y.transponed()*transformed_beam;
-    return beam;
+    qreal length_xz = sqrt(beam.d_x()*beam.d_x() + beam.d_z()*beam.d_z());
+    qreal n_ratio = beam.d_y() < 0 ? 1.0/1.5 : 1.5;
+    qreal sin_new_beta = qSin(qAcos(beam.d_y()))*n_ratio;
+    if (sin_new_beta > 1) {
+        return Beam(beam.p1(), Vector(beam.d_x(), -beam.d_y(), beam.d_z()));
+    }
+    qreal new_beta = qAsin(sin_new_beta);
+    qreal dx = beam.d_x() * qSin(new_beta) / length_xz;
+    qreal dz = beam.d_z() * qSin(new_beta) / length_xz;
+    return Beam(beam.p1(), Vector(dx, qCos(new_beta), dz));
 }
 
 Point Tube::intersection(const Beam &beam) const {
@@ -155,18 +151,44 @@ Point Cone::intersection(const Beam& beam) const {
     // So this case should be fixed by setting 'd' to zero
     if (d < 0 && fabs(d) < 1e-8) d = 0;
     // If (a == 0) then the equation degenerates into linear equation
-//    qDebug() << (-b + qSqrt(d))/(2*a) << (-b - qSqrt(d))/(2*a);
-    qreal t = qFabs(a) > 1e-9 ? (-b + qSqrt(d))/(2*a) : -c/b;
-    if (qFabs(t) < 1e-8) throw beam_exception();
-    Point p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
+//    qDebug() << "roots" << (-b + qSqrt(d))/(2*a) << (-b - qSqrt(d))/(2*a);
+    qreal t1 = (-b + qSqrt(d))/(2*a);
+    qreal t2 = (-b - qSqrt(d))/(2*a);
+    // Case 1: t1 > 0, t2 > 0. Beam's starting point does not belong the cone's surface.
+
+    qreal t = qFabs(a) > 1e-9
+            ? t2 > 0 && qFabs(t2) > 1e-9
+              ? qFabs(t1) > 1e-9
+                ? qMin(t1, t2)
+                : t2
+              : /*qFabs(t1) > 1e-9 ? */ t1 //: t2
+            : -c/b;
+//    qDebug() << t << " selected";
+    Point p;
+    if (qFabs(t) < 1e-8) {
+        if (t2 < -1e-6) {
+            t = t2;
+            p = Point(beam.x() - t*beam.cos_a(), beam.y() - t*beam.cos_b(), beam.z() - t*beam.cos_g());
+        } else throw beam_exception();
+    } else p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
+//    qDebug() << "check" << qFabs(qSqrt(p.x()*p.x() + p.y()*p.y())) << (z_k() - p.z())*tan_phi();
+
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
+    if (!correct_root && d1() < 1e-6 && qFabs(t2) > 1e-6) {
+        t = (t == t1) ? t2 : t1;
+        p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
+//        qDebug() << "check failed " << t << " selected instead";
+//        qDebug() << "check" << qFabs(qSqrt(p.x()*p.x() + p.y()*p.y())) << (z_k() - p.z())*tan_phi();
+    }
+
+    correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
     if (!correct_root) {
         // False root means that the beam goes outward without intersecting the cone's surface
         // (the intersection point is located on the imaginary side).
         // So the resulting point does not have to belong to the cone's surface
         // But it has to be located outside of the cone so that no false beams appear from it and the calculations stop.
-        while ((d1() > d2() && beam.z() - t*beam.cos_g() > 0)
-               || (d1() < d2() && beam.z() - t*beam.cos_g() < length())) {
+        while (d1() > 1e-6 && ((d1() > d2() && beam.z() - t*beam.cos_g() > 0)
+               || (d1() < d2() && beam.z() - t*beam.cos_g() < z_offset + length()))) {
             t *= 2;
         }
         p = Point(beam.x() - t*beam.cos_a(), beam.y() - t*beam.cos_b(), beam.z() - t*beam.cos_g());
@@ -192,6 +214,9 @@ Beam Lens::refracted(const Beam &beam) const {
 }
 
 Beam Plane::refracted(const Beam &beam, qreal n1, qreal n2) const {
+    if (qFabs(beam.d_y()) < 1e-6 && qFabs(beam.d_x()) < 1e-6) {
+        return beam;
+    }
     qreal length_xy = sqrt(beam.d_x()*beam.d_x() + beam.d_y()*beam.d_y());
     qreal sin_new_gamma = qSin(qAcos(beam.d_z()))*n1/n2;
     if (sin_new_gamma > 1) {

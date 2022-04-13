@@ -70,7 +70,7 @@ public:
     qreal y() const { return p.y(); }
     qreal z() const { return p.z(); }
     void reflect() { v.reflect(); }
-    Beam on_point(const Point& point) { return Beam(point, v); }
+    Beam on_point(const Point& point) const { return Beam(point, v); }
     friend QDebug& operator<<(QDebug debug, const Beam& m);
 };
 
@@ -108,37 +108,28 @@ public:
     virtual void set_d2(qreal d2) { /* do nothing */ }
     void set_length(qreal new_length) { length_ = new_length; }
     void set_n(qreal n) { refraction_index = n; }
-    Beam refracted(const Beam &beam) const;
+    Beam reflected(const Beam& beam, const Point& intersection) const;
+    Beam refracted(const Beam& beam) const;
 };
 
 class Cone : public Tube {
 private:
     qreal diameter_out;
-    qreal z_k() const { return r1()/tan_phi(); }
+    qreal z_offset;
 
 public:
-    Cone(qreal D1, qreal D2, qreal l, qreal n = 1) : Tube(D1, l, n), diameter_out(D2) {}
+    Cone(qreal D1, qreal D2, qreal l, qreal z = 0, qreal n = 1) : Tube(D1, l, n), diameter_out(D2), z_offset(z) {}
     ~Cone() override = default;
     qreal r2() const override { return diameter_out/2; }
     qreal d2() const override { return diameter_out; }
     qreal tan_phi() const  { return (d1() - d2())/(2*length()); }
     qreal phi() const override { return qAtan(tan_phi()); }
     Point intersection(const Beam& beam) const override;
+    qreal z_k() const { return z_offset + r1()/tan_phi(); }
     Point vertex() const { return Point(0, 0, z_k()); }
     void set_d2(qreal d2) override { diameter_out = d2; }
+    void set_z(qreal z) { z_offset = z; }
 };
-
-//class GlassCone : public Cone {
-//private:
-//    qreal refractive_index, cavity_length;
-//    Cone cavity;
-//public:
-//    GlassCone(qreal D1, qreal D2, qreal l, qreal cavity_length, qreal n = 1.5)
-//        : Cone(D1, D2, l), refractive_index(n), cavity_length(cavity_length),
-//          cavity(d2()*(length() - cavity_length)/cavity_length, 0, length() - cavity_length) {}
-//    ~GlassCone() override = default;
-
-//};
 
 class Matrix {
 private:
