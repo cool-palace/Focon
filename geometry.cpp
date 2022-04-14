@@ -115,7 +115,7 @@ Beam Tube::refracted(const Beam &beam) const {
     qreal length_xz = sqrt(beam.d_x()*beam.d_x() + beam.d_z()*beam.d_z());
     qreal n_ratio = beam.d_y() < 0 ? 1.0/1.5 : 1.5;
     qreal sin_new_beta = qSin(qAcos(beam.d_y()))*n_ratio;
-    if (sin_new_beta > 1) {
+    if (sin_new_beta > 1 || beam.d_y() < 0) {
         return Beam(beam.p1(), Vector(beam.d_x(), -beam.d_y(), beam.d_z()));
     }
     qreal new_beta = qAsin(sin_new_beta);
@@ -174,7 +174,7 @@ Point Cone::intersection(const Beam& beam) const {
 //    qDebug() << "check" << qFabs(qSqrt(p.x()*p.x() + p.y()*p.y())) << (z_k() - p.z())*tan_phi();
 
     bool correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
-    if (!correct_root && d1() < 1e-6 && qFabs(t2) > 1e-6) {
+    if (!correct_root && d1() < 1e-6 /*&& qFabs(t2) > 1e-6*/) {
         t = (t == t1) ? t2 : t1;
         p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
 //        qDebug() << "check failed " << t << " selected instead";

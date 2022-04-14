@@ -141,12 +141,12 @@ void MainWindow::reflection_cycle(Beam& beam, const Beam& original_beam) {
         bool hit_cavity = false;
         if (cavity) {
             Point cavity_intersection = cavity->intersection(beam);
-//            qDebug() << "cavity inter 1" << cavity_intersection;
+//            qDebug() << "cavity inter " << cavity_intersection;
 
             if (cavity_intersection.z() > cavity->z_k()
                     && cavity_intersection.z() < cone->length()
-                    && ((beam.d_z() > 0 && cavity_intersection.z() < intersection.z() && cavity_intersection.z() > beam.z())
-                        || (beam.d_z() <= 0 && cavity_intersection.z() > intersection.z() && cavity_intersection.z() < beam.z()))) {
+                    && ((beam.d_z() > 0 && cavity_intersection.z() < intersection.z() && cavity_intersection.z() > beam.z() + 1e-6)
+                        || (beam.d_z() <= 0 && cavity_intersection.z() > intersection.z() && cavity_intersection.z() < beam.z() - 1e-6))) {
 //                qDebug() << "cavity hit";
                 hit_cavity = true;
                 intersection = cavity_intersection;
@@ -191,13 +191,13 @@ void MainWindow::reflection_cycle(Beam& beam, const Beam& original_beam) {
         beam = m.transponed()*transformed_beam;
 
         // In complex modes there is no need to calculate full path of reflected beams
-        if (ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION && beam.cos_g() < 0) break;
+        if (ui->mode->currentIndex() != SINGLE_BEAM_CALCULATION && !cavity && beam.cos_g() < 0) break;
     }
 }
 
 void MainWindow::transformation_on_exit(Beam& beam, const Beam& original_beam) {
     bool simple_glass_cone = ui->glass->isChecked() && !cavity;
-    bool axial_beam = beam.d_y() < 1e-6 && beam.x() < 1e-6 && beam.y() < 1e-6;
+    bool axial_beam = qFabs(beam.d_y()) < 1e-6 && qFabs(beam.x()) < 1e-6 && qFabs(beam.y()) < 1e-6;
     bool transformation_needed = beam.cos_g() >= 0 && (simple_glass_cone || ui->ocular->isChecked() || axial_beam);
     if (transformation_needed) {
         Point exit_intersection = cone->exit().intersection(beam);

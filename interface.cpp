@@ -353,8 +353,10 @@ void MainWindow::set_glass(bool glass_on) {
     focon_up->setVisible(!glass_on);
     focon_down->setVisible(!glass_on);
     polygon->setVisible(glass_on);
-//    lens_yoz->setVisible(glass_on);
-//    ocular_yoz->setVisible(glass_on);
+    if (glass_on) {
+        ui->lens->setChecked(false);
+        ui->ocular->setChecked(false);
+    }
 }
 
 void MainWindow::clear() {
