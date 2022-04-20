@@ -12,9 +12,9 @@ void MainWindow::init_objects() {
     init_cavity(cone);
 }
 
-Point MainWindow::starting_point() { return Point(-ui->offset->value(), -ui->height->value(), 0); }
+Point MainWindow::starting_point() const { return Point(-ui->offset->value(), -ui->height->value(), 0); }
 
-Beam MainWindow::starting_beam() { return Beam(starting_point(), ui->angle->value()); }
+Beam MainWindow::starting_beam() const { return Beam(starting_point(), ui->angle->value()); }
 
 void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
     bool different_diameters = qFabs(d1 - d2) > 1e-6;
@@ -37,7 +37,7 @@ void MainWindow::init_cone(qreal d1, qreal d2, qreal length) {
     }
 }
 
-qreal MainWindow::lens_focus(bool auto_focus) {
+qreal MainWindow::lens_focus(bool auto_focus) const {
     if (auto_focus) {
         return detector.detector_z() * (cone->r1()/(cone->r1() - detector.r() * ui->defocus->value()));
     } else return ui->focal_length->value();
@@ -212,7 +212,7 @@ void MainWindow::transformation_on_exit(Beam& beam, const Beam& original_beam) {
             if (beam.d_z() < 0) {
                 try {
                     reflection_cycle(beam, original_beam);
-                } catch (beam_exception&) {
+                } catch (bad_intersection&) {
                     throw original_beam;
                 }
                 transformation_on_exit(beam, original_beam);
@@ -242,7 +242,7 @@ MainWindow::BeamStatus MainWindow::calculate_single_beam_path(Beam& beam) {
     transformation_on_entrance(beam);
     try {
         reflection_cycle(beam, original_beam);
-    } catch (beam_exception&) {
+    } catch (bad_intersection&) {
         throw original_beam;
     }
     transformation_on_exit(beam, original_beam);
@@ -395,6 +395,7 @@ QPair<int, qreal> MainWindow::optimal_length() {
             qreal length = static_cast<qreal>(i);
             cone->set_length(length);
             detector.set_position(length);
+            if (cavity) init_cavity(cone);
             if (ui->lens->isChecked()) {
                 qreal focus = lens_focus(ui->auto_focus->isChecked());
                 lens.set_focus(focus);
@@ -444,6 +445,7 @@ QPair<qreal, qreal> MainWindow::optimal_d_out() {
     for (int i = start; i <= end && !decrease_started; ++i) {
         qreal d_out = static_cast<qreal>(i) / count;
         init_cone(cone->d1(), d_out, cone->length());
+        if (cavity) init_cavity(cone);
         if (loss(calculate_parallel_beams(0)) < loss_limit && loss(calculate_parallel_beams(ui->angle->value())) < loss_limit) {
             result = calculate_every_beam();
             int current_value = result.first;
@@ -510,6 +512,7 @@ MainWindow::Parameters MainWindow::full_optimisation() {
             qreal length = static_cast<qreal>(i);
             cone->set_length(length);
             detector.set_position(length);
+            if (cavity) init_cavity(cone);
             if (ui->lens->isChecked()) {
                 qreal focus = lens_focus(ui->auto_focus->isChecked());
                 lens.set_focus(focus);
@@ -557,7 +560,7 @@ MainWindow::Parameters MainWindow::complex_optimisation() {
     return best_result;
 }
 
-qreal MainWindow::loss(const QPair<int, int>& result) {
+qreal MainWindow::loss(const QPair<int, int>& result) const {
     int beams_passed = result.first;
     int beams_total = result.second;
     return 10*qLn(static_cast<qreal>(beams_total)/beams_passed)/qLn(10);

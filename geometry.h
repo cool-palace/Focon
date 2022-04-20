@@ -5,7 +5,7 @@
 #include <QLineF>
 #include <QTextStream>
 
-class beam_exception : std::exception {
+class bad_intersection : std::exception {
     const char* what() const noexcept override { return "Beam calculation error"; }
 };
 
@@ -65,7 +65,6 @@ public:
     qreal d_y() const { return v.d_y(); }
     qreal d_z() const { return v.d_z(); }
     Point p1() const { return p; }
-//    Point p2() const { return Point(p.x()+v.d_x(), p.y()+v.d_y(), p.z()+v.dx()); }
     qreal x() const { return p.x(); }
     qreal y() const { return p.y(); }
     qreal z() const { return p.z(); }

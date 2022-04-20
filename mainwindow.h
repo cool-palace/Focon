@@ -158,10 +158,10 @@ private slots:
 
     // Calculations
     void init_objects();
-    Point starting_point();
-    Beam starting_beam();
+    Point starting_point() const;
+    Beam starting_beam() const;
     void init_cone(qreal d1, qreal d2, qreal length);
-    qreal lens_focus(bool auto_focus);
+    qreal lens_focus(bool auto_focus) const;
     void init_cavity(Tube* glass_cone);
     void build();
     void transformation_on_entrance(Beam& beam);
@@ -177,7 +177,7 @@ private slots:
     QPair<qreal, qreal> optimal_d_out();
     Parameters full_optimisation();
     Parameters complex_optimisation(); //
-    qreal loss(const QPair<int, int>&);
+    qreal loss(const QPair<int, int>&) const;
     qreal mean_exit_angle() const;
 
 };

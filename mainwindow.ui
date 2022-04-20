@@ -136,12 +136,16 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label_cavity">
            <property name="text">
-            <string>Длина полости</string>
+            <string>Глубина полости, мм</string>
            </property>
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QDoubleSpinBox" name="cavity_length"/>
+          <widget class="QDoubleSpinBox" name="cavity_length">
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -214,7 +218,7 @@
           <double>2.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>25.000000000000000</double>
+          <double>50.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.100000000000000</double>

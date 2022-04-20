@@ -157,19 +157,19 @@ Point Cone::intersection(const Beam& beam) const {
     // Case 1: t1 > 0, t2 > 0. Beam's starting point does not belong the cone's surface.
 
     qreal t = qFabs(a) > 1e-9
-            ? t2 > 0 && qFabs(t2) > 1e-9
-              ? qFabs(t1) > 1e-9
+            ? t2 > 0 && qFabs(t2) > 1e-6
+              ? qFabs(t1) > 1e-6
                 ? qMin(t1, t2)
                 : t2
               : /*qFabs(t1) > 1e-9 ? */ t1 //: t2
             : -c/b;
 //    qDebug() << t << " selected";
     Point p;
-    if (qFabs(t) < 1e-8) {
+    if (qFabs(t) < 1e-6) {
         if (t2 < -1e-6) {
             t = t2;
             p = Point(beam.x() - t*beam.cos_a(), beam.y() - t*beam.cos_b(), beam.z() - t*beam.cos_g());
-        } else throw beam_exception();
+        } else throw bad_intersection();
     } else p = Point(beam.x() + t*beam.cos_a(), beam.y() + t*beam.cos_b(), beam.z() + t*beam.cos_g());
 //    qDebug() << "check" << qFabs(qSqrt(p.x()*p.x() + p.y()*p.y())) << (z_k() - p.z())*tan_phi();
 
@@ -180,7 +180,7 @@ Point Cone::intersection(const Beam& beam) const {
 //        qDebug() << "check failed " << t << " selected instead";
 //        qDebug() << "check" << qFabs(qSqrt(p.x()*p.x() + p.y()*p.y())) << (z_k() - p.z())*tan_phi();
     }
-
+    if (qFabs(t) < 1e-6 && d1() > 1e-6) throw bad_intersection();
     correct_root = qFabs(qSqrt(p.x()*p.x() + p.y()*p.y()) - (z_k() - p.z())*tan_phi()) < 1e-6;
     if (!correct_root) {
         // False root means that the beam goes outward without intersecting the cone's surface
