@@ -4,7 +4,7 @@
 #include <QVBoxLayout>
 #include <QGraphicsRectItem>
 #include <QMainWindow>
-#include "mainwindow.h"
+#include "include\mainwindow.h"
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
