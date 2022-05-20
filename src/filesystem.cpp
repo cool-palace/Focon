@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+#include "..\include\mainwindow.h"
 #include "ui_mainwindow.h"
 
 void MainWindow::save_settings() {

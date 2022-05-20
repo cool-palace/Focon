@@ -9,15 +9,15 @@ CONFIG += c++14
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    calculations.cpp \
-    filesystem.cpp \
-    geometry.cpp \
-    interface.cpp \
+    src\calculations.cpp \
+    src\filesystem.cpp \
+    src\geometry.cpp \
+    src\interface.cpp \
     main.cpp
 
 HEADERS += \
-    geometry.h \
-    mainwindow.h
+    include\geometry.h \
+    include\mainwindow.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -26,3 +26,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 FORMS += \
     mainwindow.ui
+
+DISTFILES +=
+
+RESOURCES += \
+    res.qrc

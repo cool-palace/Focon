@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+#include "..\include\mainwindow.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -341,13 +341,11 @@ void MainWindow::set_glass(bool glass_on) {
         polygon_points.push_back(cavity_vertex);
     }
 
-//    auto polygon = new QGraphicsPolygonItem(QPolygonF(polygon_points));
     polygon->setPolygon(QPolygonF(polygon_points));
     polygon->setBrush(glass_on
                       ? (ui->night_mode->isChecked() ? glass_brush_white : glass_brush_black)
                       : QBrush());
 
-//    QPointF cavity_vertex = ((cone->length() - cavity.length()) * scale, scene->height()/2);
     ui->lens->setDisabled(glass_on);
     ui->ocular->setDisabled(glass_on);
     focon_up->setVisible(!glass_on);

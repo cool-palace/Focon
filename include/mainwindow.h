@@ -71,14 +71,12 @@ private:
     };
 
     // Basic objects
-//    Point start;
     Point intersection;
     Tube * cone = nullptr;
     Cone * cavity = nullptr;
     Detector detector;
     Lens lens;
     Lens ocular;
-//    Beam beam;
 
     // Calculation results
     qreal scale;
@@ -123,8 +121,8 @@ private:
     QGraphicsTextItem * origin_label_yoz;
 
     QGraphicsPolygonItem * polygon;
-    QBrush glass_brush_black = QBrush(QPixmap("F:\\Focon\\glass-black.png"));
-    QBrush glass_brush_white = QBrush(QPixmap("F:\\Focon\\glass-white.png"));
+    QBrush glass_brush_black = QBrush(QPixmap(":/textures/glass-black.png"));
+    QBrush glass_brush_white = QBrush(QPixmap(":/textures/glass-white.png"));
 
 private slots:
     // Interface
